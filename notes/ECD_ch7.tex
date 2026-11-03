@@ -49,7 +49,7 @@
 \newcommand{\extag}[1]{\colorbox{extagbg}{\textcolor{extag}{\sffamily\bfseries\,例 #1\,}}}
 \newcommand{\exhead}[3]{\par\medskip\noindent\extag{#1}\enspace{\bfseries #3}\enspace{\small\color{black!55}(p.#2)}\par\nopagebreak\smallskip}
 \newcommand{\exref}[1]{\textcolor{extag}{\textbf{\sffamily 例 #1}}}
-\newcommand{\rfig}[3]{\begin{center}\includegraphics[width=#2\linewidth]{../fig/lib/ch7/fig7_#1.png}\\[0.1em]{\small\sffamily 圖 7.#1\quad #3}\end{center}}
+\newcommand{\rfig}[3]{\begin{center}\includegraphics[width=#2\linewidth]{../fig/ch7/fig7_#1.png}\\[0.1em]{\small\sffamily 圖 7.#1\quad #3}\end{center}}
 
 \begin{document}
 \begin{center}{\LARGE\bfseries\sffamily ECD 單元複習講義：Noise（雜訊）}\\[0.3em]{\large Razavi, \emph{Design of Analog CMOS Integrated Circuits}, Ch.~7（pp.~219--272）}\end{center}
@@ -235,8 +235,8 @@ $M_1$ 的熱雜訊與 $1/f$ 雜訊、$R_D$ 的熱雜訊都以電流源表示，�
 若只用 $\Vsq{in}$，前級輸出阻抗 $R_1$ 與 $C_{in}$ 分壓，會得 $\Vsq{out}=\dfrac{4kT\gamma g_mR_D^2}{R_1^2C_{in}^2\omega^2+1}$，即 $R_1\to\infty$ 時 $M_1$ 的輸出雜訊消失，這顯然錯誤。解法是同時用串聯電壓源 $\Vsq{in}$ 與並聯電流源 $\Isq{in}$；兩者對任何線性二埠都是\textbf{充分且必要}的表示。
 
 \begin{center}
-\includegraphics[width=0.27\linewidth]{../fig/lib/ch7/fig7_33.png}\hspace{1.5em}
-\includegraphics[width=0.52\linewidth]{../fig/lib/ch7/fig7_34.png}\\[0.1em]
+\includegraphics[width=0.27\linewidth]{../fig/ch7/fig7_33.png}\hspace{1.5em}
+\includegraphics[width=0.52\linewidth]{../fig/ch7/fig7_34.png}\\[0.1em]
 {\small\sffamily 圖 7.33\quad 電壓+電流源表示法（p.239）\qquad 圖 7.34\quad (a) 短路求 $\Vsq{in}$，(b) 開路求 $\Isq{in}$（p.239）}
 \end{center}
 
@@ -363,8 +363,8 @@ $R_D=\infty$ 時退化成\exref{7.15}，$g_{m2}=0$ 時退化成電阻負載 CS�
 
 \subsection{Common-gate 級：負載雜訊直接成為輸入雜訊電流}
 \begin{center}
-\includegraphics[width=0.36\linewidth]{../fig/lib/ch7/fig7_46.png}\hspace{1em}
-\includegraphics[width=0.56\linewidth]{../fig/lib/ch7/fig7_47.png}\\[0.1em]
+\includegraphics[width=0.36\linewidth]{../fig/ch7/fig7_46.png}\hspace{1em}
+\includegraphics[width=0.56\linewidth]{../fig/ch7/fig7_47.png}\\[0.1em]
 {\small\sffamily 圖 7.46\quad CG 級與雜訊源\qquad 圖 7.47\quad (a)(b) 短路求 $\Vsq{in}$；(c)(d) 開路求 $\Isq{in}$（p.250）}
 \end{center}
 CG 輸入阻抗低，\textbf{即使低頻 $\Isq{in}$ 也不可忽略}。
@@ -468,8 +468,8 @@ $V_{nXY}=V_{nX}-V_{nY}=g_{m3}V_{n3}\dfrac{r_{O3}r_{O1}}{r_{O3}+r_{O1}}$，即 $M
 
 \subsection{五電晶體 OTA}
 \begin{center}
-\includegraphics[width=0.28\linewidth]{../fig/lib/ch7/fig7_61.png}\hspace{2em}
-\includegraphics[width=0.24\linewidth]{../fig/lib/ch7/fig7_62.png}\\[0.1em]
+\includegraphics[width=0.28\linewidth]{../fig/ch7/fig7_61.png}\hspace{2em}
+\includegraphics[width=0.24\linewidth]{../fig/ch7/fig7_62.png}\\[0.1em]
 {\small\sffamily 圖 7.61\quad 輸出短路雜訊電流\qquad 圖 7.62\quad 尾電流雜訊的影響（p.262）}
 \end{center}
 因不對稱，改求 Norton 等效（輸出短路電流）。OTA 的 $G_m\approx g_{m1,2}$：
