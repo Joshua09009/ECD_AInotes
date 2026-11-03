@@ -1,0 +1,681 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Noto Serif CJK TC}[BoldFont={Noto Serif CJK TC Bold}]
+\setsansfont{Noto Sans CJK TC}[BoldFont={Noto Sans CJK TC Bold}]
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt
+\usepackage{amsmath,amssymb,bm}
+\usepackage{tabularx,booktabs,array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+\renewcommand{\arraystretch}{1.35}
+
+\definecolor{bluebg}{HTML}{F5F8FB}  \definecolor{blueframe}{HTML}{AFC0D2}  \definecolor{bluetitle}{HTML}{1F3864}
+\definecolor{greenbg}{HTML}{F3F9F4} \definecolor{greenframe}{HTML}{A8CDB1} \definecolor{greentitle}{HTML}{1E5631}
+\definecolor{redbg}{HTML}{FCF4F4}   \definecolor{redframe}{HTML}{DDB1B1}   \definecolor{redtitle}{HTML}{8B1E1E}
+\definecolor{amberbg}{HTML}{FCF8EE} \definecolor{amberframe}{HTML}{DCC896} \definecolor{ambertitle}{HTML}{7A5200}
+\definecolor{graybg}{HTML}{F6F6F6}  \definecolor{grayframe}{HTML}{C4C4C4}  \definecolor{graytitle}{HTML}{333333}
+\newcommand{\boxmark}{\rule[0.02em]{0.62em}{0.62em}}
+\tcbset{
+  boxblue/.style ={colback=bluebg, colbacktitle=bluebg, colframe=blueframe, coltitle=bluetitle},
+  boxgreen/.style={colback=greenbg,colbacktitle=greenbg,colframe=greenframe,coltitle=greentitle},
+  boxred/.style  ={colback=redbg,  colbacktitle=redbg,  colframe=redframe,  coltitle=redtitle},
+  boxamber/.style={colback=amberbg,colbacktitle=amberbg,colframe=amberframe,coltitle=ambertitle},
+  boxgray/.style ={colback=graybg, colbacktitle=graybg, colframe=grayframe, coltitle=graytitle},
+  notebox/.style={enhanced,breakable,sharp corners,boxrule=0.6pt,titlerule=0pt,
+    fonttitle=\bfseries\large,toptitle=6pt,bottomtitle=2pt,
+    left=10pt,right=10pt,top=4pt,bottom=8pt,before skip=10pt,after skip=12pt,
+    boxblue}}
+\newtcolorbox{cbox}[2][boxblue]{notebox,#1,title={\boxmark\enspace #2}}
+\newtcolorbox{takeaway}[1][重點提示]{notebox,boxamber,title={\boxmark\enspace #1}}
+\newtcolorbox{derivationbox}[1][完整推導]{notebox,boxblue,title={\boxmark\enspace #1}}
+\newtcolorbox{trapbox}[1][常見陷阱]{notebox,boxred,title={\boxmark\enspace #1}}
+\newtcolorbox{recipebox}[1][解題流程]{notebox,boxgreen,title={\boxmark\enspace #1}}
+
+% ===== 記號 =====
+\newcommand{\bH}{\beta H}
+\newcommand{\GX}{\text{GX}}
+\newcommand{\PX}{\text{PX}}
+% ===== 例題標示 =====
+\definecolor{extag}{HTML}{3A3A3A}
+\definecolor{extagbg}{HTML}{E4E4E4}
+\newcommand{\extag}[1]{\colorbox{extagbg}{\textcolor{extag}{\sffamily\bfseries\,例 #1\,}}}
+\newcommand{\exhead}[3]{\par\medskip\noindent\extag{#1}\enspace{\bfseries #3}\enspace{\small\color{black!55}(p.#2)}\par\nopagebreak\smallskip}
+\newcommand{\exref}[1]{\textcolor{extag}{\textbf{\sffamily 例 #1}}}
+\newcommand{\rfig}[3]{\begin{center}\includegraphics[width=#2\linewidth]{../fig/ch10/fig10_#1.png}\\[0.1em]{\small\sffamily 圖 10.#1\quad #3}\end{center}}
+
+\begin{document}
+\begin{center}{\LARGE\bfseries\sffamily ECD 單元複習講義：Stability and Frequency Compensation（穩定性與頻率補償）}\\[0.3em]{\large Razavi, \emph{Design of Analog CMOS Integrated Circuits}, Ch.~10（pp.~410--458）}\end{center}
+
+\textbf{記號約定}：$\beta H(s)$ 為\textbf{迴路傳輸}（loop transmission），課本有時也叫 loop gain；本章假設 $\beta\le1$ 且與頻率無關。$|\beta H|=1$ 的頻率叫 \textbf{gain crossover}（\GX，即迴路的單位增益頻寬），$\angle\beta H=-180^\circ$ 的頻率叫 \textbf{phase crossover}（\PX）。相位邊限 $\text{PM}=180^\circ+\angle\beta H(\omega_{\GX})$。$\omega_p'$（加撇號）表示\textbf{補償後}的極點。「零點在 RHP」指 $s$ 平面右半平面。圖片皆截取自課本，圖說後標註頁碼；課本 Examples 以 \extag{10.x} 標籤開頭、獨立成段，內文提到時以 \exref{10.x} 標示；章末習題寫成「習題 10.x」，兩者題號會重疊，請注意區分。
+
+\begin{takeaway}[考試重點地圖]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{穩定判準與 PM}：Barkhausen（$|\beta H|=1$、$\angle\beta H=-180^\circ$）、\GX{} 必須在 \PX{} 之前；PM 與閉迴路峰值的關係 $\left|\frac{Y}{X}\right|_{\omega_{\GX}}=\frac{1}{\beta}\cdot\frac{1}{2\sin(\text{PM}/2)}$（$45^\circ\to1.3/\beta$、$60^\circ\to1/\beta$）。
+  \item \textbf{兩極點系統算 PM}：給 $A_0$、$\omega_{p1}$、$\omega_{p2}$ 求 PM，或反求 $A_0$；「\GX{} 落在 $\omega_{p2}$ 時 PM $=45^\circ$」；$\beta$ 變小 $\Rightarrow$ 更穩定（習題 10.1--10.4、10.23）。
+  \item \textbf{補償的核心結論}：把主極點往原點推（加大 $C_L$），補償後單位增益頻寬 $\le$ 第一個非主極點；增大 $R_{out}$ 無效；mirror pole 有害；全差動 telescopic 免補償（cascode 節點極點併入輸出極點）。
+  \item \textbf{兩級 op amp 的 Miller 補償}：pole splitting $\omega_{p1}'\approx\frac{1}{g_{m9}R_LC_CR_S}$、$\omega_{p2}'\approx\frac{g_{m9}}{C_L}$；$C_C\approx\frac{g_{m1}}{g_{m9}}C_L$；RHP zero $g_{m9}/C_C$；串聯 $R_z$ 後 $\omega_z=\frac{1}{C_C(g_{m9}^{-1}-R_z)}$，抵消 $\omega_{p2}'$ 需 $R_z\approx\frac{C_L+C_C}{g_{m9}C_C}$。
+  \item \textbf{Slew rate 與 Nyquist}：兩級 op amp $\text{SR}=I_{SS}/C_C$ 及其成立條件（\exref{10.8} 加 $C_L$）；Nyquist：$\beta H$ 的極座標圖不可順時針包圍 $(-1,0)$，原點極點、多次 $180^\circ$ 交越的判法。
+\end{enumerate}
+本章目前沒有收錄在專題資料夾的考古題（〈Midterm Problems〉為 Ch.~2--7），第 \ref{sec:problems} 節改以章末習題整理題型，所有數值皆以 Python 驗算。
+\end{takeaway}
+
+% =====================================================================
+\section{回授系統何時振盪：看迴路傳輸 $\beta H$ 就夠}
+
+\subsection{Barkhausen 判準與 GX／PX}
+負回授系統（圖中 $\beta$ 為常數）的閉迴路轉移函數為
+\begin{align}
+\frac{Y}{X}(s)=\frac{H(s)}{1+\beta H(s)}
+\end{align}
+若某頻率 $\omega_1$ 使 $\beta H(j\omega_1)=-1$，閉迴路「增益」為無限大，電路會放大自己的雜訊而振盪。拆成大小與相位兩條件（Barkhausen's criteria，p.~411）：
+\begin{align}
+|\beta H(j\omega_1)|=1,\qquad \angle\beta H(j\omega_1)=-180^\circ
+\end{align}
+直觀：負回授本身已貢獻 $180^\circ$，迴路再轉 $180^\circ$ 共 $360^\circ$，回授訊號與原雜訊\textbf{同相相加}；迴路增益 $\ge1$ 才能讓振幅成長。這兩個條件\textbf{只跟迴路傳輸有關}，與輸入、輸出接在哪裡無關，所以通常從開迴路系統就能判斷閉迴路穩定性。
+
+\rfig{02}{0.72}{(a) 不穩定與 (b) 穩定系統的迴路傳輸 Bode 圖（p.~411）}
+不穩定可以看成「相位到 $-180^\circ$ 時增益太大」，或等價地「增益降到 1 時相位轉太多」。穩定系統的 \GX{} 必須\textbf{遠早於} \PX{}；\GX{} 就是迴路傳輸的單位增益頻寬。
+
+\exhead{10.1}{411--412}{$\beta$ 變小時更穩定還是更不穩定？}
+$\beta$ 變小使 $20\log|\beta H|$ 整條往下平移，\GX{} 往左移；$\angle\beta H$ 與 $\beta$ 無關、不動，所以\textbf{更穩定}。極端情況：完全不加回授（$\beta=0$）就不可能振盪。因此\textbf{最壞情況是 $\beta=1$（unity-gain feedback）}，常直接分析 $\beta H=H$ 的圖。
+
+\subsection{Bode 圖兩條規則與極點位置}
+(1) 每經過一個零點斜率 $+20$\,dB/dec，每經過一個極點 $-20$\,dB/dec。(2) 頻率 $\omega_m$ 的極點（零點）約從 $0.1\omega_m$ 開始改變相位，在 $\omega_m$ 處變 $-45^\circ$（$+45^\circ$），到約 $10\omega_m$ 接近 $-90^\circ$（$+90^\circ$）。\textbf{重點：高頻極點／零點對相位的影響遠大於對大小的影響}，因為相位提早一個十倍頻就開始變。
+
+閉迴路極點 $s_p=\sigma_p+j\omega_p$：脈衝響應含 $e^{(\sigma_p+j\omega_p)t}$。$\sigma_p>0$（RHP）$\to$ 振幅成長；$\sigma_p=0$ $\to$ 等幅振盪（也算不穩定）；$\sigma_p<0$（LHP）$\to$ 衰減。隨迴路增益畫出閉迴路極點的軌跡就是 root locus。
+\rfig{04}{0.62}{極點位置與時域響應：(a) 成長振盪、(b) 等幅振盪、(c) 穩定（p.~413）}
+
+\subsection{單極點系統：無條件穩定}
+$H(s)=A_0/(1+s/\omega_0)$ 代入得
+\begin{align}
+\frac{Y}{X}(s)=\frac{\dfrac{A_0}{1+\beta A_0}}{1+\dfrac{s}{\omega_0(1+\beta A_0)}}
+\end{align}
+單一極點的相位最多 $-90^\circ$，永遠到不了 $-180^\circ$，所以對所有 $\beta\ge0$ 都穩定。
+\rfig{05}{0.36}{單極點系統的迴路傳輸 Bode 圖（p.~413）}
+
+\exhead{10.2}{413}{單極點系統的 root locus}
+閉迴路極點 $s_p=-\omega_0(1+\beta A_0)$：永遠是 LHP 的實數極點，迴路增益增加時往左（遠離原點）移動。
+\rfig{06}{0.3}{單極點 root locus（p.~414）}
+
+% =====================================================================
+\section{多極點系統：極點越多，相位越早到 $-180^\circ$}
+
+\subsection{兩極點系統}
+大小在 $\omega_{p1}$ 開始以 $-20$\,dB/dec 下降、在 $\omega_{p2}$ 變 $-40$\,dB/dec；相位在 $\omega_{p1}$ 為 $-45^\circ$、$10\omega_{p1}$ 約 $-90^\circ$、$\omega_{p2}$ 為 $-135^\circ$，\textbf{只會漸近} $-180^\circ$，因此 \GX{} 一定在 \PX{}（無限遠）之前：兩極點系統\textbf{永遠穩定}，但 PM 可能很小（會 ringing）。減小 $\beta$ 同樣讓 \GX{} 左移、\PX{} 不動 $\Rightarrow$ 更穩定，代價是回授變弱。
+\rfig{07}{0.36}{兩極點系統的迴路傳輸，灰線為較小 $\beta$（p.~414）}
+
+\exhead{10.3}{414--415}{兩極點系統的 root locus}
+\begin{align}
+\frac{Y}{X}(s)&=\frac{A_0}{\left(1+\frac{s}{\omega_{p1}}\right)\left(1+\frac{s}{\omega_{p2}}\right)+\beta A_0}
+=\frac{A_0\omega_{p1}\omega_{p2}}{s^2+(\omega_{p1}+\omega_{p2})s+(1+\beta A_0)\omega_{p1}\omega_{p2}}\\
+s_{1,2}&=\frac{-(\omega_{p1}+\omega_{p2})\pm\sqrt{(\omega_{p1}+\omega_{p2})^2-4(1+\beta A_0)\omega_{p1}\omega_{p2}}}{2}
+\end{align}
+$\beta=0$ 時 $s_{1,2}=-\omega_{p1},-\omega_{p2}$。根號內在下式時為零（兩極點重合）：
+\begin{align}
+\beta_1=\frac{1}{A_0}\,\frac{(\omega_{p1}-\omega_{p2})^2}{4\omega_{p1}\omega_{p2}}
+\end{align}
+$\beta>\beta_1$ 後成為共軛複數，實部固定為 $-(\omega_{p1}+\omega_{p2})/2$，沿垂直線上下移動，\textbf{永遠不碰到 $j\omega$ 軸}，所以不會不穩定（但越來越欠阻尼）。
+\rfig{08}{0.36}{兩極點 root locus（p.~415）}
+
+\subsection{三極點系統：可能不穩定}
+第三個極點帶來額外相位，可能把 \PX{} 拉到 \GX{} 之前而振盪。為什麼 \GX{} 移動得比 \PX{} 少？因為相位在極點頻率的 $1/10$ 就開始變，大小要到極點頻率附近才開始掉。因此\textbf{閉迴路增益設計得越高（$\beta$ 越小）的放大器越穩定}。
+\rfig{09}{0.7}{(a) 三極點系統迴路傳輸，(b) \GX{} 與 \PX{} 重合時的閉迴路響應（p.~416）}
+\textbf{注意：}不要把 $\beta H$ 的圖和閉迴路響应 $Y/X$ 混淆。圖 10.9(b) 中 \GX{}＝\PX{}$=\omega_0$，閉迴路 $|Y/X|$ 在 $\omega_0$ 為無限大（低頻約 $1/\beta$）。
+
+% =====================================================================
+\section{Phase margin：PM 決定頻率峰值與 ringing}
+
+\subsection{PM 的定義與峰值計算}
+\begin{align}
+\boxed{\text{PM}=180^\circ+\angle\beta H(\omega_1)},\qquad \omega_1=\text{gain crossover}
+\end{align}
+穩定要求 PM 為正且夠大。課本用 $\angle\beta H=-175^\circ$（PM $=5^\circ$）與 $-135^\circ$（PM $=45^\circ$）兩個數字示範，其實可以一次推出一般式：
+
+\begin{derivationbox}[完整推導：PM 與閉迴路在 $\omega_{\GX}$ 的峰值]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{在 \GX{} 寫出迴路傳輸}：$|\beta H(j\omega_1)|=1$、$\angle\beta H=-(180^\circ-\text{PM})$，所以
+  \[\beta H(j\omega_1)=e^{-j(180^\circ-\text{PM})}=-e^{j\,\text{PM}}\]
+  \item \textbf{代入閉迴路}：$H(j\omega_1)=\beta H/\beta$，大小為 $1/\beta$：
+  \[\left|\frac{Y}{X}(j\omega_1)\right|=\frac{|H(j\omega_1)|}{|1+\beta H(j\omega_1)|}=\frac{1/\beta}{|1-e^{j\,\text{PM}}|}\]
+  \item \textbf{化簡分母}：$|1-e^{j\theta}|=\sqrt{(1-\cos\theta)^2+\sin^2\theta}=\sqrt{2-2\cos\theta}=2\sin(\theta/2)$，
+  \[\boxed{\left|\frac{Y}{X}(j\omega_1)\right|=\frac{1}{\beta}\cdot\frac{1}{2\sin(\text{PM}/2)}}\]
+  \item \textbf{驗算課本數字}：
+  \begin{itemize}[label=\textperiodcentered,leftmargin=1.5em]
+    \item PM $=5^\circ$：$1/(2\sin2.5^\circ)=11.46$，即課本 (10.14) 的 $11.5/\beta$（分母 $|0.0038-j0.0872|=0.0872$）。
+    \item PM $=45^\circ$：$1/(2\sin22.5^\circ)=1.307$，即 (10.18) 的 $1.3/\beta$（$|0.29-0.71j|=0.765$），\textbf{約 30\% 峰值}。
+    \item PM $=60^\circ$：$1/(2\sin30^\circ)=1$，$|Y/X|=1/\beta$，幾乎沒有峰值。
+  \end{itemize}
+\end{enumerate}
+\end{derivationbox}
+
+\rfig{10}{0.62}{(a) PM 小、(b) PM 大時的閉迴路頻率與時間響應（p.~417）}
+PM 小時閉迴路在 $\omega_1$ 附近出現尖峰，步階響應非常欠阻尼；這也說明\textbf{二階系統即使穩定也可能嚴重 ringing}。
+
+\exhead{10.4}{417--418}{$|\beta H(\omega_{p2})|=1$ 且 $\omega_{p1}\ll\omega_{p2}$ 的 PM}
+$\angle\beta H(\omega_{p2})\approx-90^\circ-45^\circ=-135^\circ$，所以 $\boxed{\text{PM}=45^\circ}$。\textbf{重點}：迴路增益若在第二極點之後才降到 1，PM 就小於 $45^\circ$；而 $45^\circ$ 通常不夠，所以\textbf{單位增益頻寬不能超過開迴路的第二極點}。
+\rfig{11}{0.34}{\exref{10.4}：\GX{} 落在 $\omega_{p2}$（p.~418）}
+
+\subsection{PM 要多大？$60^\circ$ 是常用最佳值}
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+PM & $|Y/X|$ 在 $\omega_{\GX}$ & 頻率峰值 & 步階響應\\\midrule
+$45^\circ$ & $1.31/\beta$ & 約 30\% & 明顯 ringing\\
+$60^\circ$ & $1/\beta$ & 可忽略 & 少量過衝、\textbf{settling 最快}\\
+$90^\circ$ & $0.71/\beta$ & 無 & 一階、較慢\\
+\bottomrule
+\end{tabular}
+\end{center}
+PM 更大雖然更穩定，但時間響應變慢，所以 \textbf{PM $=60^\circ$ 通常被視為最佳值}。
+
+\begin{minipage}[t]{0.36\linewidth}
+\rfig{12}{0.85}{PM $=45^\circ$ 的閉迴路響應（p.~418）}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.6\linewidth}
+\rfig{13}{0.98}{PM $=45^\circ$、$60^\circ$、$90^\circ$ 的步階響應（p.~419）}
+\end{minipage}\par
+
+\textbf{小訊號 vs.\ 大訊號}：PM 的概念適用於小訊號。大訊號步階除了 slewing，偏壓電流電壓大幅擺動也會使極點零點在暫態中改變，所以大訊號應以閉迴路時域模擬為準。例：圖 10.14 的單位增益 buffer，SPICE 顯示 PM 約 $65^\circ$、單位增益頻率 150\,MHz，但大訊號步階仍明顯 ringing。
+\rfig{14}{0.55}{PM 合理但大訊號 settling 不佳的 unity-gain buffer（p.~419）}
+
+% =====================================================================
+\section{基本頻率補償：把主極點往原點推}
+
+\subsection{兩種思路}
+需要補償是因為 $|\beta H|$ 沒有在 $\angle\beta H$ 到 $-180^\circ$ 之前\textbf{遠遠地}降到 1。對策：(a) 減少總相移，把 \PX{} 往外推，即減少訊號路徑上的極點數（級數），代價是增益或擺幅；(b) 讓增益提早下降，把 \GX{} 往內拉，保留低頻增益與擺幅，代價是頻寬。實務上先設計極點少的電路，若 PM 仍不足再做 (b)。補償要依最終的 $\beta$ 來做：例如閉迴路增益 4 時 $\beta\approx0.25$，不必以 $\beta=1$ 補償。
+\rfig{15}{0.68}{頻率補償：(a) 把 \PX{} 往外推，(b) 把 \GX{} 往內拉（p.~420）}
+
+\subsection{單端輸出 telescopic op amp 的極點排列}
+\begin{minipage}[c]{0.36\linewidth}
+\rfig{16}{0.95}{單端輸出 telescopic op amp（p.~421）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.6\linewidth}
+訊號路徑 1：$M_3$ 源極（高頻）、mirror 節點 $A$、$M_7$ 源極 $N$；路徑 2：$M_4$ 源極；兩路共享輸出極點。
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{輸出極點最低（dominant）}：輸出電阻遠大於其他節點的小訊號電阻，$\omega_{p,out}=1/(R_{out}C_L)$ 決定開迴路 3-dB 頻寬。
+  \item \textbf{第一個非主極點在 mirror 節點 $A$}：$C_A\approx C_{GS5}+C_{GS6}+C_{DB5}+2C_{GD6}+C_{DB3}+C_{GD3}$ 很大，電阻 $\approx1/g_{m5}$ 也較大。
+  \item \textbf{再來是 $N$，而非 $X$／$Y$}：同 overdrive 時 $g_{m4}=g_{m7}$，但 PMOS 要比 NMOS 寬（$W_4/W_7=\mu_p/\mu_n\approx1/2\sim1/3$），$N$ 的電容大得多。$X$、$Y$ 兩極點幾乎相同，可提出合併為一個。
+\end{itemize}
+\end{minipage}\par
+\rfig{17}{0.5}{極點位置：$-\frac{1}{R_{out}C_L}$ 最靠近原點（p.~421）}
+\rfig{18}{0.4}{telescopic op amp 的迴路傳輸 Bode 圖（$\beta=1$）（p.~422）}
+mirror pole 的相位在較低頻就出現，所以\textbf{通常是它限制 PM}。另外 mirror 也帶來一個 LHP 零點，位於 $2\omega_{p,A}$（第 6 章）。
+
+\subsection{補償程序：只動主極點}
+假設非主極點（以及約 $10\omega_{p,out}$ 以上的相位曲線）不變。主極點在 \GX{}／\PX{} 附近的相位貢獻接近 $90^\circ$ 且幾乎與它的位置無關，所以\textbf{把 $\omega_{p1}$ 往原點移（加大 $C_L$）只改變大小曲線、不改變相位曲線的關鍵部分}，PM 就能提高，代價是頻寬。
+\begin{minipage}[t]{0.48\linewidth}
+\rfig{19}{0.9}{把主極點往原點移（p.~422）}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\rfig{20}{0.95}{以 PM $=45^\circ$ 為目標的補償作圖（p.~423）}
+\end{minipage}\par
+\textbf{作圖法（PM $=45^\circ$，且 $\omega_{p,N}\gg\omega_{p,A}$）}：先找 $\angle\beta H=-180^\circ+\text{PM}=-135^\circ$ 的頻率，這裡就是 $\omega_{p,A}$；從 $\omega_{p,A}$ 以 $-20$\,dB/dec 的斜率往低頻畫直線到 $20\log A_0$，交點即新的主極點 $\omega_{p,out}'$。負載電容需放大 $\omega_{p,out}/\omega_{p,out}'$ 倍。
+
+\textbf{基本結論}：補償後（開迴路）op amp 的\textbf{單位增益頻寬等於第一個非主極點頻率}（PM $=45^\circ$ 時）。要得到寬頻的回授系統，第一個非主極點必須盡量遠，因此 mirror pole 不受歡迎。PM 要求 $>45^\circ$ 時，補償後頻寬一定低於第一個非主極點。
+
+\textbf{增大 $R_{out}$ 不能補償}：雖然 $\omega_{p,out}=(R_{out}C_L)^{-1}$ 會降低，但 $R_{out}$ 同時提高低頻增益，大小曲線在高頻不變，\GX{} 不動（圖 10.21）。把某個非主極點往原點移也不會改善 PM，因為它只會讓相位更早下降。
+\rfig{21}{0.36}{提高 $R_{out}$ 只改變低頻部分（p.~423）}
+
+\exhead{10.5}{424}{$\beta<1$ 時補償電容可以放寬多少？}
+原設計以 $\beta=1$、PM $=60^\circ$ 補償：找 $\angle\beta H=-120^\circ$ 的頻率，從那裡以 $20$\,dB/dec 畫線回 $20\log A_0$，主極點由 $\omega_{p1}$ 移到 $\omega_{p1}'$。改用 $\beta<1$ 時，未補償的大小曲線下移 $-20\log\beta$，所需主極點為 $\omega_{p1}''$。令線段 $CD$ 斜率為 $20$\,dB/dec：
+\begin{align}
+\frac{-20\log\beta}{\log\omega_{p1}''-\log\omega_{p1}'}=20\ \Rightarrow\ \boxed{\omega_{p1}''=\frac{\omega_{p1}'}{\beta}}
+\end{align}
+補償電容約可縮小為 $\beta$ 倍。但閉迴路速度不會變快：原本 $(1+A_0)\omega_{p1}'\approx A_0\omega_{p1}'$，新的 $(1+\beta A_0)\omega_{p1}''\approx\beta A_0\omega_{p1}'/\beta=A_0\omega_{p1}'$，\textbf{閉迴路 $-3$\,dB 頻寬大致相同}。延伸問題見習題 10.23（第 \ref{sec:problems} 節）。
+\rfig{22}{0.66}{\exref{10.5}（p.~424）}
+
+\subsection{全差動 telescopic：天生穩定}
+\begin{minipage}[c]{0.3\linewidth}
+\rfig{23}{0.95}{全差動 telescopic（p.~425）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.66\linewidth}
+全差動沒有 mirror pole：每個輸出一個主極點，只剩 $X$（或 $Y$）一個非主極點，而且因 NMOS $g_m$ 大而在高頻，所以\textbf{全差動 telescopic-cascode 通常穩定、不需補償}。
+
+那 PMOS cascode 內部節點 $N$ 的電容 $C_N=C_{GS5}+C_{SB5}+C_{GD7}+C_{DB7}$ 呢？它會不會讓 cascode 輸出阻抗在高頻下降而產生新極點？
+\end{minipage}\par
+\rfig{24}{0.6}{cascode 電流源內部節點電容的影響（p.~425）}
+\begin{align}
+Z_{out}&=(1+g_{m5}r_{O5})Z_N+r_{O5},\qquad Z_N=r_{O7}\parallel(C_Ns)^{-1}\\
+&\approx(1+g_{m5}r_{O5})\frac{r_{O7}}{r_{O7}C_Ns+1}\qquad(\text{第一項遠大於第二項})\\
+Z_{out}\parallel\frac{1}{C_Ls}&=\frac{(1+g_{m5}r_{O5})r_{O7}}{\left[(1+g_{m5}r_{O5})r_{O7}C_L+r_{O7}C_N\right]s+1}
+\end{align}
+並聯後仍只有\textbf{一個極點}，時間常數 $=$ 輸出時間常數 $(1+g_{m5}r_{O5})r_{O7}C_L$ 再加 $r_{O7}C_N$。也就是 $N$ 點的極點\textbf{併入輸出極點}，只讓主極點稍微降低，不產生新極點（若保留 $r_{O5}$ 項，會多出幾乎相等的一對極零點，$g_mr_O\gg1$ 且 $C_L>C_N$ 時可忽略）。所以全差動形式同時避開了 mirror pole 與 $N$ 點極點。
+
+\textbf{用零點抵消極點？}在主放大器旁並聯一條低增益、快速的路徑可產生零點，放在第一個非主極點上。但有失配時抵消不完全，閉迴路步階響應會出現\textbf{慢的 settling 尾巴}（doublet 問題，習題 10.19）。
+
+% =====================================================================
+\section{兩級 op amp：Miller 補償與 pole splitting}
+
+\subsection{兩個主極點的問題}
+\begin{minipage}[c]{0.6\linewidth}
+\rfig{25}{0.95}{兩級 op amp（p.~426）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.36\linewidth}
+\rfig{26}{0.95}{兩級 op amp 迴路傳輸（p.~427）}
+\end{minipage}\par
+三個極點：$X$（$Y$）在高頻；$E$（$F$）電阻很高，即使只有 $M_3,M_5,M_9$ 的電容也會產生低頻極點；$A$（$B$）電阻較低但 $C_L$ 可能很大。所以\textbf{兩級 op amp 有兩個主極點}，相位在第三極點之前就接近 $-180^\circ$，PM 可能接近零。若只把 $\omega_{p,E}$ 往下移（電容接地），補償後頻寬受限於約 $\omega_{p,A}$，而且所需電容很大。
+
+\subsection{Miller 補償：小電容做出低頻極點}
+第一級輸出阻抗 $R_{out1}$ 很高、第二級有中等增益 $A_{v2}$，正好適合 Miller 倍增：在第二級跨接 $C_C$，節點 $E$ 的極點移到
+\begin{align}
+\omega_{p,E}'=\frac{1}{R_{out1}\left[C_E+(1+A_{v2})C_C\right]}
+\end{align}
+用中等大小的電容就能做出低頻極點，省面積。
+\rfig{27}{0.55}{Miller 補償（p.~427）}
+
+\subsection{Pole splitting：輸出極點被推離原點}
+\begin{minipage}[c]{0.4\linewidth}
+\rfig{28}{0.98}{pole splitting（p.~428）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.56\linewidth}
+\rfig{29}{0.98}{(a) 兩級 op amp 簡化電路，(b) 高頻的粗略模型（p.~428）}
+\end{minipage}\par
+$R_S$ 為第一級輸出電阻，$R_L=r_{O9}\parallel r_{O11}$。由第 6 章（極點相距很遠的假設）：
+\begin{align}
+\omega_{p1}'&\approx\frac{1}{R_S\left[(1+g_{m9}R_L)(C_C+C_{GD9})+C_E\right]+R_L(C_C+C_{GD9}+C_L)}\\
+\omega_{p2}'&\approx\frac{R_S\left[(1+g_{m9}R_L)(C_C+C_{GD9})+C_E\right]+R_L(C_C+C_{GD9}+C_L)}{R_SR_L\left[(C_C+C_{GD9})C_E+(C_C+C_{GD9})C_L+C_EC_L\right]}
+\end{align}
+\textbf{化簡}：補償前（$C_C=0$、$C_L$ 較大）$\omega_{p2}\approx1/(R_LC_L)$。補償後典型情況 $C_C+C_{GD9}\gg C_E$，分子取 $R_Sg_{m9}R_LC_C$、分母取 $R_SR_LC_C(C_E+C_L)$：
+\begin{align}
+\omega_{p1}'\approx\frac{1}{g_{m9}R_LR_SC_C},\qquad
+\omega_{p2}'\approx\frac{g_{m9}}{C_E+C_L}\approx\boxed{\frac{g_{m9}}{C_L}}\quad(C_E\ll C_L)
+\end{align}
+輸出極點被提高約 \textbf{$g_{m9}R_L$ 倍}。直觀：高頻時 $C_C$ 把 $M_9$ 閘汲極短路，$M_9$ 變成二極體接法，$C_L$ 看到的電阻從 $R_L$ 降為 $R_S\parallel g_{m9}^{-1}\parallel R_L\approx g_{m9}^{-1}$；另一角度是 $C_C$ 感測輸出、對第二級形成回授，使輸出電阻下降（也降低第二級的輸入阻抗）。\textbf{總結}：Miller 補償把級間極點推向原點、把輸出極點推離原點，頻寬遠大於單純把電容接地；但兩個極點都會動，選 $C_C$ 需要迭代。
+
+\exhead{10.6}{428--429}{PM $=45^\circ$ 時估計 $C_C$}
+補償後 $\omega_{p1}'\approx(g_{m9}R_LC_CR_S)^{-1}$、$\omega_{p2}'\approx g_{m9}/C_L$。PM $=45^\circ$ 要求迴路增益在 $\omega_{p2}'$ 降到 1。低頻迴路增益 $\beta g_{m1}R_Sg_{m9}R_L$，忽略 $\omega_{p2}'$ 對大小的影響：
+\begin{align}
+|\beta H(\omega)|\approx\frac{\beta g_{m1}R_Sg_{m9}R_L}{\sqrt{1+\omega^2/\omega_{p1}'^2}}
+\ \xrightarrow{\ \omega=\omega_{p2}'\ }\ \frac{\beta g_{m1}R_Sg_{m9}R_L}{\omega_{p2}'/\omega_{p1}'}=1
+\end{align}
+代入 $\omega_{p2}'/\omega_{p1}'=g_{m9}^2R_LR_SC_C/C_L$，取 $\beta=1$：
+\begin{align}
+\boxed{C_C=\frac{g_{m1}}{g_{m9}}C_L}
+\end{align}
+若保留 $\omega_{p2}'$ 在大小上的 $\sqrt2$（在 $\omega_{p2}'$ 處 $|1+j|=\sqrt2$），則 $C_C=\dfrac{g_{m1}}{\sqrt2\,g_{m9}}C_L$。實際要更大的 $C_C$ 才有較高 PM，但這是好的起點；閉迴路增益 $\ge2$ 時所需 $C_C$ 更小。注意 $g_{m1}$、$g_{m9}$ 分別是兩級的轉導。
+\rfig{30}{0.36}{補償後迴路增益（線性軸）（p.~429）}
+
+\subsection{RHP 零點：雙重打擊}
+Miller 補償的電路有零點 $\omega_z=g_{m9}/(C_C+C_{GD9})$，位在\textbf{右半平面}：$C_C+C_{GD9}$ 形成從輸入到輸出的前饋路徑。分子 $(1-s/\omega_z)$ 的相位是 $-\tan^{-1}(\omega/\omega_z)$，\textbf{像 LHP 極點一樣貢獻負相位}（\PX{} 往內移），同時大小卻像零點一樣讓斜率回升（\GX{} 往外推），所以穩定度大幅惡化。兩級 op amp 通常 $|\omega_{p1}|<|\omega_z|<|\omega_{p2}|$。$g_m$ 本來就小、$C_C$ 又要夠大才能放好主極點，所以這是嚴重問題。
+\rfig{31}{0.42}{RHP 零點的影響（p.~430）}
+
+\exhead{10.7}{430}{選 $C_C=C_L$ 想用零點抵消第二極點？}
+零點在 RHP、極點在 LHP：
+\begin{align}
+\beta H(s)=\frac{\beta A_0\left(1-\frac{s}{\omega_z}\right)}{\left(1+\frac{s}{\omega_{p1}}\right)\left(1+\frac{s}{\omega_{p2}}\right)}
+\end{align}
+$1-s/\omega_z$ 與 $1+s/\omega_{p2}$ 即使 $\omega_z=\omega_{p2}$ 也不相消，零點仍影響 $|\beta H|$ 與 $\angle\beta H$（相位反而多掉 $90^\circ$）。
+
+\subsection{串聯電阻 $R_z$：把零點移走甚至拿來抵消}
+\rfig{32}{0.4}{加 $R_z$ 移動 RHP 零點（p.~430）}
+輸出級變成三個極點，但 $R_z$ 適中時第三極點在高頻，前兩極點與 $R_z=0$ 時相近。零點推導（習題 10.8，用圖 6.18 的方法：零點是輸出電流為零的 $s$）：
+
+\begin{derivationbox}[完整推導：加 $R_z$ 後的零點與極零點抵消條件]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{零點條件}：在零點頻率 $V_{out}=0$。此時流過 $R_z$--$C_C$ 支路的電流 $V_1/(R_z+1/C_Cs)$ 必須全部被 $M_9$ 的 $g_{m9}V_1$ 吸走（$R_L$、$C_L$ 上沒有電流）：
+  \[\frac{V_1}{R_z+\dfrac{1}{C_Cs}}=g_{m9}V_1\ \Rightarrow\ \frac{C_Cs}{1+R_zC_Cs}=g_{m9}\ \Rightarrow\ C_Cs\left(1-g_{m9}R_z\right)=g_{m9}\]
+  \[\boxed{\omega_z=\frac{1}{C_C\left(g_{m9}^{-1}-R_z\right)}}\]
+  \item \textbf{三種選擇}：
+  \begin{itemize}[label=\textperiodcentered,leftmargin=1.5em]
+    \item $R_z<g_{m9}^{-1}$：零點仍在 RHP，但頻率提高。
+    \item $R_z=g_{m9}^{-1}$：零點到無限遠。
+    \item $R_z>g_{m9}^{-1}$：零點移到 LHP，可用來\textbf{抵消第一個非主極點} $\omega_{p2}'=-g_{m9}/(C_L+C_E)$。
+  \end{itemize}
+  \item \textbf{抵消條件}：令 $\dfrac{1}{C_C(g_{m9}^{-1}-R_z)}=\dfrac{-g_{m9}}{C_L+C_E}$，解得
+  \[R_z=\frac{C_L+C_E+C_C}{g_{m9}C_C}\approx\boxed{\frac{C_L+C_C}{g_{m9}C_C}}\qquad(C_E\ll C_L+C_C)\]
+\end{enumerate}
+\end{derivationbox}
+
+\textbf{抵消的兩個實際缺點}：(1) 很難保證 (10.33)，尤其 $C_L$ 未知或會變（switched-capacitor 電路一個週期內負載會變），失配就產生 doublet；(2) $R_z$ 通常用 triode MOS 實現，輸出大擺幅經 $C_C$ 耦合到 $X$，使 $R_z$ 大幅改變，劣化大訊號 settling。
+\begin{minipage}[c]{0.3\linewidth}
+\rfig{33}{0.9}{大擺幅對 $R_z$ 的影響（p.~431）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.64\linewidth}
+\rfig{34}{0.68}{產生 $V_b$ 以追蹤製程溫度（p.~432）}
+\end{minipage}\par
+\textbf{產生 $V_b$}：$M_{13}$、$M_{14}$ 二極體串聯，選 $I_1$ 使 $V_{GS13}=V_{GS9}$，則 $V_{GS15}=V_{GS14}$。由
+\[g_{m14}=\mu_pC_{ox}(W/L)_{14}(V_{GS14}-V_{TH14}),\qquad R_{on15}=[\mu_pC_{ox}(W/L)_{15}(V_{GS15}-V_{TH15})]^{-1}\]
+得 $R_{on15}=g_{m14}^{-1}(W/L)_{14}/(W/L)_{15}$。令其等於 $g_{m9}^{-1}(1+C_L/C_C)$：
+\begin{align}
+(W/L)_{15}=\sqrt{(W/L)_{14}(W/L)_9\frac{I_{D9}}{I_{D14}}}\;\frac{C_C}{C_C+C_L}
+\end{align}
+只含比例，$C_L$ 固定時可相當準確。另一法（圖 10.35）用與 $R_z$ 匹配的電阻 $R_S$ 產生 $I_b\propto R_S^{-2}$，使 $g_{m9}\propto R_S^{-1}$，$R_z/R_S$ 固定比例即可。兩法都\textbf{假設平方律}，短通道 $M_9$ 會產生誤差。
+
+\subsection{兩級 op amp 對負載電容敏感}
+Miller 補償把主極點放在第一級輸出，$C_L$ 增大會把\textbf{第二極點}拉向原點、PM 變差；單級 op amp 的 $C_L$ 就是主極點，$C_L$ 增大反而 PM 變好（只是更 overdamped）。
+\rfig{36}{0.62}{$C_L$ 增大對單級（左）與兩級（右）op amp 步階響應的影響（p.~433）}
+
+\begin{trapbox}[常見陷阱：Miller 補償的幾個易錯點]
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{RHP 零點不能抵消 LHP 極點}（\exref{10.7}）；它對相位的作用和 LHP 極點同號，畫 Bode 圖時相位要\textbf{往下}加。
+  \item $C_C$ 估算式 $C_C=\frac{g_{m1}}{g_{m9}}C_L$ 只對應 PM $\approx45^\circ$、$\beta=1$；PM $=60^\circ$ 要更大，且要記得還有 RHP 零點會吃掉相位。
+  \item 抵消條件是 $R_z\approx\frac{C_L+C_C}{g_{m9}C_C}$（$=g_{m9}^{-1}(1+C_L/C_C)$），不是 $1/g_{m9}$；$R_z=1/g_{m9}$ 只是把零點推到無限遠。
+  \item 兩級 op amp 的 $C_L$ 變大會\textbf{降低} PM；單級 op amp 恰好相反。
+\end{itemize}
+\end{trapbox}
+
+% =====================================================================
+\section{兩級 op amp 的 slewing：$\text{SR}=I_{SS}/C_C$ 與成立條件}
+
+\subsection{先看理想積分器}
+圖 10.37(a)：$I_{in}=I_{SS}u(t)$ 流入，$A$ 很大使 $X$ 為虛接地，$C_F$ 兩端電壓 $\approx V_{out}$，$V_{out}(t)\approx\frac{I_{SS}}{C_F}t$。用電晶體實現（圖 10.37(b)）時寫兩條方程式：
+\begin{align}
+\frac{V_{out}}{r_O}+g_mV_X+I_{in}=I_1,\qquad C_F\frac{d(V_{out}-V_X)}{dt}=I_{in}
+\end{align}
+由前式解 $V_X$ 代入後式：
+\begin{align}
+C_F\left(1+\frac{1}{g_mr_O}\right)\frac{dV_{out}}{dt}=I_{in}-\frac{C_F}{g_m}\frac{dI_{in}}{dt}
+\ \Rightarrow\
+V_{out}(t)=\frac{I_{SS}}{C_F\left(1+\frac{1}{g_mr_O}\right)}t\,u(t)-\frac{I_{SS}}{g_m+r_O^{-1}}u(t)
+\end{align}
+三個觀察：(1) $t=0^+$ 時 $C_F$ 像短路，$I_{in}$ 流過 $(1/g_m)\parallel r_O$，輸出先\textbf{往下跳} $-I_{SS}/(g_m+r_O^{-1})$；(2) 斜率對應等效電容 $C_F(1+g_m^{-1}r_O^{-1})$，是 $C_F$ 在輸出端的 Miller 效應；(3) 與 $I_1$ 無關（$I_1$ 只是偏壓）。近似 $V_{out}\approx(I_{SS}/C_F)t\,u(t)$。
+\rfig{37}{0.8}{(a) slew 分析的簡化電路，(b) 實現，(c) slewing 時的輸出波形（p.~433）}
+
+\subsection{兩級 op amp 的正負 slew rate}
+\rfig{38}{0.68}{(a) 簡單兩級 op amp，(b) 正向 slewing、(c) 負向 slewing 的簡化電路（p.~434）}
+\textbf{正向}：$V_{in}$ 大正步階使 $M_2$、$M_4$、$M_3$ 截止，$C_C$ 被定電流 $I_{SS}$ 充電；第二級增益使 $X$ 為虛接地：
+\begin{align}
+V_{out}(t)\approx\frac{I_{SS}t}{C_C}u(t)\quad\Rightarrow\quad\boxed{\text{SR}^+=\frac{I_{SS}}{C_C}}
+\end{align}
+條件：slewing 期間 $M_5$ 要同時供應 $I_{SS}$ 與 $I_1$；若 $M_5$ 不夠寬、無法在飽和區提供 $I_{SS}+I_1$，$V_X$ 會大幅下降，甚至把 $M_1$ 推進 triode。\\
+\textbf{負向}：$I_1$ 必須同時吸收 $I_{SS}$ 與 $I_{D5}$。若 $I_1=I_{SS}$，$V_X$ 上升讓 $M_5$ 關掉；若 $I_1<I_{SS}$，$M_3$ 進 triode，slew rate 變成 $I_{D3}/C_C$。（「正向」指 op amp 輸出波形的斜率方向。）
+
+\exhead{10.8}{435}{加上負載電容 $C_L$ 的 slew rate（$\lambda=0$）}
+$\lambda=0$ 使 $V_X\to V_{out}$ 的穩態增益無限大，$X$ 為虛接地。分兩種情況：
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{(a) $I_{in}$ 流入 $X$}：$I_{SS}$ 流過 $C_F$，$V_{out}$ 以 $I_{SS}/C_F$ 的速率\textbf{下降}，$C_L$ 也以同速率放電，$M_{out}$ 要吸收三個電流：$I_1$、$I_{SS}$、$C_LdV_{out}/dt=(C_L/C_F)I_{SS}$。只要 $M_{out}$ 保持飽和，$\text{SR}\approx I_{SS}/C_F$。
+  \item \textbf{(b) $I_{in}$ 流出 $X$}：$V_{out}$ 以 $I_{SS}/C_F$ \textbf{上升}，$C_L$ 需要 $(C_L/C_F)I_{SS}$。若 $I_1>(1+C_L/C_F)I_{SS}$，$M_{out}$ 保持導通，$\text{SR}=I_{SS}/C_F$；若 $I_1<(1+C_L/C_F)I_{SS}$，$M_{out}$ 關掉，$I_1-I_{SS}$ 對 $C_L$ 充電，
+  \[\text{SR}=\frac{I_1-I_{SS}}{C_L}\quad(\text{很小})\]
+\end{itemize}
+\rfig{39}{0.8}{\exref{10.8}：(a) 電流流入 $X$，(b)(c) 電流流出 $X$（p.~435）}
+\textbf{結論}：重負載時，class-A 輸出級的\textbf{偏壓電流 $I_1$ 必須大於 $(1+C_L/C_F)I_{SS}$}，否則某一方向的 slew rate 會被 $I_1/C_L$ 限制。
+
+\subsection{兩級 class-AB op amp}
+class-AB 也能用 Miller 補償，但訊號路徑上的電流鏡多一個極點，PM 變差，所以\textbf{通常比 class-A 慢}。slew rate 同樣是 $(I_1-I_{SS})/C_L$（$M_{out}$ 關掉時），但 $I_1$ 由電流鏡放大而得：$I_1=(W_{p1}/W_{p2})\alpha I_{in}$，
+\begin{align}
+\text{SR}=\left[\alpha\frac{W_{p1}}{W_{p2}}-1\right]\frac{I_{SS}}{C_L}
+\end{align}
+可以很大。
+\rfig{40}{0.3}{簡化的 class-AB op amp（p.~435）}
+
+% =====================================================================
+\section{其他補償技巧：切斷 $C_C$ 的前饋路徑}
+
+\subsection{在 $C_C$ 串一個 source follower}
+困難來自 $C_C$ 的前饋路徑。若 $C_C$ 只能把電流從輸出送回 $X$、不能反向，零點就會到很高頻。在 $C_C$ 串聯 source follower 即可（$C_{GS2}\ll C_C$）。
+\rfig{41}{0.58}{(a) 有 RHP 零點的兩級 op amp；(b) 加 source follower 去除零點（p.~436）}
+\begin{minipage}[c]{0.38\linewidth}
+\rfig{42}{0.95}{圖 10.41(b) 的簡化等效電路（p.~436）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.58\linewidth}
+設 $\gamma=\lambda=0$，$-g_{m1}V_1=V_{out}(R_L^{-1}+C_Ls)$，故
+\[V_1=\frac{-V_{out}}{g_{m1}R_L}(1+R_LC_Ls)\]
+又
+\[\frac{V_{out}-V_1}{\frac{1}{g_{m2}}+\frac{1}{C_Cs}}+I_{in}=\frac{V_1}{R_S}\]
+\end{minipage}\par
+代入得
+\begin{align}
+\frac{V_{out}}{I_{in}}=\frac{-g_{m1}R_LR_S(g_{m2}+C_Cs)}{R_LC_LC_C(1+g_{m2}R_S)s^2+\left[(1+g_{m1}g_{m2}R_LR_S)C_C+g_{m2}R_LC_L\right]s+g_{m2}}
+\end{align}
+零點 $-g_{m2}/C_C$ 在 \textbf{LHP}，可以拿來抵消一個極點。在 $1+g_{m2}R_S\gg1$、$(1+g_{m1}g_{m2}R_LR_S)C_C\gg g_{m2}R_LC_L$ 下：
+\begin{align}
+\omega_{p1}\approx\frac{g_{m2}}{g_{m1}g_{m2}R_LR_SC_C}\approx\frac{1}{g_{m1}R_LR_SC_C},\qquad
+\omega_{p2}\approx\frac{g_{m1}g_{m2}R_LR_SC_C}{R_LC_LC_Cg_{m2}R_S}=\frac{g_{m1}}{C_L}
+\end{align}
+與 Miller 結果相同（輸出極點由 $(R_LC_L)^{-1}$ 移到 $g_{m1}/C_L$）。\textbf{缺點}：source follower 使輸出下限受限於 $V_{GS2}+V_{I2}$。
+
+\subsection{用 common-gate 級回送電流（Ahuja 補償）}
+\begin{minipage}[c]{0.48\linewidth}
+\rfig{43}{0.95}{common-gate 補償技巧（p.~437）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.48\linewidth}
+\rfig{44}{0.95}{圖 10.43 的簡化等效電路（p.~437）}
+\end{minipage}\par
+$C_C$ 隔開直流準位，CG 級 $M_2$ 把輸出擺幅轉成電流送回 $M_1$ 閘極：$V_1$ 變 $\Delta V$、$V_{out}$ 變 $A_v\Delta V$ 時，$C_C$ 電流約 $A_v\Delta VC_Cs$（$1/g_{m2}$ 小），電容倍增 $A_v$ 倍。設 $\lambda=\gamma=0$：
+\begin{align}
+V_{out}+\frac{g_{m2}V_2}{C_Cs}=-V_2\ \Rightarrow\ V_2=-V_{out}\frac{C_Cs}{C_Cs+g_{m2}},\qquad
+g_{m1}V_1+V_{out}\left(\frac{1}{R_L}+C_Ls\right)=g_{m2}V_2
+\end{align}
+加上 $I_{in}=V_1/R_S+g_{m2}V_2$，解得
+\begin{align}
+\frac{V_{out}}{I_{in}}=\frac{-g_{m1}R_SR_L(g_{m2}+C_Cs)}{R_LC_LC_Cs^2+\left[(1+g_{m1}R_S)g_{m2}R_LC_C+C_C+g_{m2}R_LC_L\right]s+g_{m2}}
+\end{align}
+同樣是 LHP 零點，且
+\begin{align}
+\omega_{p1}\approx\frac{1}{g_{m1}R_LR_SC_C},\qquad \boxed{\omega_{p2}\approx\frac{g_{m2}R_Sg_{m1}}{C_L}}
+\end{align}
+第二極點比 source follower 版\textbf{再高 $g_{m2}R_S$ 倍}：高頻時 $M_2$ 與 $R_S$ 組成的回授迴路把輸出電阻再降低同樣倍數。實際上 $M_1$ 閘極電容會減弱 pole splitting，但仍有潛力得到大頻寬。
+
+\textbf{Slewing 問題}：正向 slewing（圖 10.45(a)）$M_2$ 與 $I_1$ 要供應 $I_{SS}$，需 $I_1\ge I_{SS}+I_{D1}$；$I_1$ 不足則 $V_P$ 下降關掉 $M_1$，$I_1<I_{SS}$ 時 $M_0$ 與其尾電流進 triode，$\text{SR}=I_1/C_C$。負向 slewing（圖 10.45(b)）$I_2$ 要同時供應 $I_{SS}$ 與 $I_{D2}$；$P$ 可視為虛接地，所以\textbf{正負 slew rate 相等需要 $I_3$（即 $I_2$）與 $I_{SS}$ 一樣大}，功耗增加。
+\rfig{45}{0.6}{圖 10.43 在 (a) 正向、(b) 負向 slewing 時（p.~438）}
+
+\subsection{cascode 第一級的變形}
+把 $C_C$ 接在 cascode 管源極（$X$、$Y$）與輸出之間（圖 10.46(a)），用圖 10.46(b) 的模型與圖 6.18 方法可證：零點在 $(g_{m4}R_{eq})(g_{m9}/C_C)$，比 $g_{m9}/C_C$ 大很多；主極點約 $(R_{eq}g_{m9}R_LC_C)^{-1}$（彷彿 $C_C$ 接在 $M_9$ 閘極）；第一個非主極點 $g_{m4}g_{m9}R_{eq}/C_L$，與 (10.51) 類似。但 $X$ 點電阻很大，其電容可能形成明顯極點。也可再串 $R_z$，或同時使用 $C_C$ 與 $C_C'$ 兩種補償。
+\rfig{46}{0.82}{(a) cascode 第一級的補償方式，(b) 簡化等效電路（p.~439）}
+
+% =====================================================================
+\section{Nyquist 穩定判準：Bode 圖看不到的不穩定}
+
+\subsection{動機：只看 $s=j\omega$ 不夠}
+圖 10.47 中 $\beta=1$、$|H(\omega_0)|=3$（\PX{} 處），Bode 觀點判為 PM 為負、不穩定。但代入 $s=j\omega_0$：
+\begin{align}
+\frac{Y}{X}(j\omega_0)=\frac{-3}{1-3}=\frac32<\infty
+\end{align}
+任何 $s=j\omega$ 都找不到 $Y/X=\infty$。原因：Bode 圖只檢查\textbf{等幅正弦波}能否在迴路中無限循環；它不排除\textbf{成長的正弦波} $s=\sigma_1+j\omega_1$（$\sigma_1>0$）使 $H(s)=-1$。Nyquist 定理能預測這種 $s$ 是否存在：它計算 $1+\beta H(s)$ 在 RHP 或 $j\omega$ 軸上有幾個零點，沒有就穩定。
+\rfig{47}{0.6}{Bode 圖判為不穩定的系統（p.~440）}
+
+\subsection{極座標圖與從 $s$ 平面讀相位}
+把 $|H|$、$\angle H$ 畫在極座標，$\omega$ 變化時形成 \textbf{$H$ contour}；橫軸為 $\text{Re}\{H\}$、縱軸為 $\text{Im}\{H\}$。例：$H=A_0/(1+s/\omega_p)$ 從 $(A_0,0)$（$\omega=0$）往左下走，以 $-90^\circ$ 進入原點（是半圓，但形狀不重要）。Nyquist 法主要只看 $\omega=0$ 與 $\omega=\pm\infty$，省去大量代數。
+
+\textbf{從 $s$ 平面算相位}：對單極點 $H(s_1)=\dfrac{A_0\omega_p}{\sigma_1+\omega_p+j\omega_1}$，$\angle H(s_1)=-\tan^{-1}\dfrac{\omega_1}{\sigma_1+\omega_p}$。所以\textbf{從極點畫向量到 $s_1$，量它與正 $\sigma$ 軸的夾角再乘 $-1$}；零點則不乘 $-1$；多個極零點的相位代數相加。（大小 $=$ 零點向量長度乘積 $\div$ 極點向量長度乘積，但 Nyquist 法用不太到。）
+
+\textbf{一階系統的例子}（$H=A_0\frac{1+s/\omega_z}{1+s/\omega_p}$，$\omega_p>\omega_z$）：$\omega=0$ 時相位 0、大小 $A_0$；往上走時零點角度大於極點，相位為正；$s\to+j\infty$ 時兩角都趨近 $90^\circ$，相位回到 0，大小 $A_0\omega_p/\omega_z>A_0$。所以 contour 在上半平面從 $A_0$ 繞到更右邊的 $A_0\omega_p/\omega_z$。$s$ 平面對 $\sigma$ 軸對稱（共軛極零點），極座標圖也對實軸對稱。
+\rfig{53}{0.8}{一階系統：從 $s$ 平面的角度建構 $H$ contour（p.~443）}
+
+\subsection{封閉 $s$ contour 的映射與 Cauchy 定理}
+$s$ 也可沿 $s$ 平面中任意封閉路徑走。課本逐一檢查（pp.~443--447）：
+\begin{itemize}[leftmargin=1.5em]
+  \item $s$ contour \textbf{不包含}任何極零點，或\textbf{同時包含}一個極點與一個零點：$H$ contour \textbf{不包圍原點}。
+  \item 順時針 $s$ contour 只包含\textbf{一個極點}：$H$ contour \textbf{逆時針}包圍原點一次（$\angle H$ 從 $-180^\circ$ 經 $-90^\circ$ 到 0）。
+  \item 順時針只包含\textbf{一個零點}：$H$ contour \textbf{順時針}包圍原點一次。
+  \item 二階系統，順時針 contour 包含兩個極點：$H$ 逆時針包圍原點兩次。
+\end{itemize}
+\textbf{Cauchy's principle of argument}：$s$ contour 順時針包圍 $H(s)$ 的 $P$ 個極點與 $Z$ 個零點，則 $H$ 的極座標圖順時針包圍原點 $Z-P$ 次。反過來，若已知 contour 內有 $P$ 個極點、量到順時針包圍 $N$ 次，就知道 contour 內零點數 $\boxed{Z=N+P}$，這就是 Nyquist 定理的關鍵。
+
+\subsection{Nyquist 方法}
+閉迴路 $\frac{H}{1+\beta H}$ 在 $j\omega$ 軸或 RHP（\textbf{critical region}）有極點即不穩定，也就是 $1+\beta H(s)$ 在該區有零點。步驟：(1) 另外求出 $P$；(2) $s$ 沿包住 critical region 的 contour 走，畫 $1+\beta H(s)$；(3) 數順時針包圍原點次數 $N$；(4) $P+N$ 即 critical region 內的零點數。
+
+兩個簡化：$1+\beta H$ 的極點就是 $H$ 的極點，開迴路穩定（大多數電路）時 $P=0$、$N=Z$；$1+\beta H$ 包圍原點等價於 $\beta H$ 包圍 $(-1,0)$。
+
+\begin{cbox}[boxblue]{Nyquist 定理}
+閉迴路系統 $H(s)/[1+\beta H(s)]$ 穩定的條件（開迴路穩定時）：當 $s$ 順時針繞行 critical region 時，\textbf{$\beta H(s)$ 的極座標圖不可順時針包圍點 $(-1,0)$}；若曲線恰好通過 $(-1,0)$，表示閉迴路在 $j\omega$ 軸上有極點（$|\beta H|=1$、$\angle\beta H=180^\circ$）。
+\end{cbox}
+
+\begin{minipage}[c]{0.62\linewidth}
+\rfig{61}{0.98}{$1+\beta H$ 與 $\beta H$ 的極座標圖（p.~448）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.34\linewidth}
+\rfig{62}{0.85}{簡單的 $s$ contour（p.~448）}
+\end{minipage}\par
+常用 contour：從原點沿 $j\omega$ 軸到 $+j\infty$（$M$），以極大半徑繞過 RHP 到 $-j\infty$（$N$），再回原點。因對稱，只要畫 $0\to M\to N$ 那半，再對實軸鏡射。
+
+\exhead{10.9}{448--449}{單極點 $H=A_0/(1+s/\omega_{p1})$}
+$s=0$ 時 $\beta H=\beta A_0$；沿 $j\omega$ 往上，相位越來越負，$+j\infty$ 時以 $-90^\circ$ 到達原點；大半徑繞 RHP 時 $\beta H$ 一直為 0（整段 $M\to N$ 映射到原點）。鏡射後不包圍 $(-1,0)$：\textbf{永遠穩定}。
+\rfig{63}{0.62}{\exref{10.9}（p.~449）}
+
+\exhead{10.10}{449}{兩極點 $H=A_0/[(1+s/\omega_{p1})(1+s/\omega_{p2})]$}
+$+j\infty$ 時相位 $-180^\circ$、大小 0，曲線以 $180^\circ$ 角回到原點；RHP 大圓仍映射到原點。不包圍 $(-1,0)$，對任何 $\beta$ 都穩定（與第 2 節結論一致）。
+\rfig{64}{0.62}{\exref{10.10}（p.~449）}
+
+\exhead{10.11}{449--450}{三極點系統}
+$\beta H$ 從 $\beta A_0$ 順時針轉，到 $+j\infty$ 時相位 $-270^\circ=+90^\circ$、大小 0。鏡射後\textbf{可能}包圍 $(-1,0)$，取決於與負實軸交點 $Q$ 的位置。$Q$ 處 $\angle\beta H=-180^\circ$：
+\begin{align}
+\tan^{-1}\frac{\omega_Q}{\omega_{p1}}+\tan^{-1}\frac{\omega_Q}{\omega_{p2}}+\tan^{-1}\frac{\omega_Q}{\omega_{p3}}=180^\circ
+\end{align}
+解出 $\omega_Q$ 再算 $|\beta H(j\omega_Q)|$，大於 1（$Q$ 在 $(-1,0)$ 左邊）即不穩定（這正是 Bode 圖上「\PX{} 處增益是否 $>1$」）。曲線半徑與 $\beta$ 成正比，$\beta$ 越大曲線越膨脹，\textbf{較大的回授係數可能使三極點系統不穩定}。
+\rfig{65}{0.7}{\exref{10.11}：(a) $s$ 與 $\beta H$ contour，(b) Bode 圖，(c) 不同 $\beta$（p.~450）}
+
+\textbf{數包圍次數的通用方法}：(1) 從 $(-1,0)$ 往任意方向畫一條射線到無限遠；(2) 數曲線順時針與逆時針穿過射線的次數；(3) 相減。
+
+\subsection{原點有極點的系統}
+例如積分器 $H(s)=-1/(R_1C_1s)$。contour 不能通過原點，改沿極小半圓 $\epsilon e^{j\phi}$ 繞過。若 $H=A_0/s$，$\beta H=\beta(A_0/\epsilon)e^{-j\phi}$：$\phi=0$ 時為很大的正實數，$\phi\to90^\circ$ 時在極大半徑上轉到 $-90^\circ$；接著沿 $j\omega$ 軸，相位維持 $-90^\circ$、大小遞減到原點。曲線不包圍 $(-1,0)$。
+\begin{minipage}[c]{0.3\linewidth}
+\rfig{66}{0.95}{積分器（p.~451）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.66\linewidth}
+\rfig{67}{0.95}{繞過原點極點的 $s$ contour 與 $\beta H$ contour（p.~451）}
+\end{minipage}\par
+
+\exhead{10.12}{451--452}{$H=A_0(1+s/\omega_z)/s$（積分器的 $C_1$ 串電阻）}
+小圓上 $\beta H\approx\beta(A_0/\epsilon)e^{-j\phi}$（半徑極小，零點幾乎不貢獻相位）；沿 $j\omega$ 往上時零點開始加正相位，$s\to+j\infty$ 時 $\beta H\to\beta A_0/\omega_z$（實數）。曲線被零點\textbf{推離原點}，仍不包圍 $(-1,0)$。
+\rfig{68}{0.7}{\exref{10.12}（p.~452）}
+
+\exhead{10.13}{452}{兩個理想積分器 $H=A_0/s^2$（重要新觀察）}
+$s=\epsilon e^{j\phi}$：$\beta H=\beta(A_0/\epsilon^2)e^{-2j\phi}$，$\phi=45^\circ$（$N$）轉了 $-90^\circ$，$\phi=90^\circ$（$P$）回到負實軸。之後沿 $j\omega$ 軸相位固定 $-180^\circ$、大小 $\beta A_0/\omega^2$ 遞減，\textbf{沿負實軸走向原點，在 $\omega=\sqrt{\beta A_0}$ 通過 $(-1,0)$}。閉迴路
+\begin{align}
+\frac{H}{1+\beta H}=\frac{A_0}{s^2+\beta A_0}\ \Rightarrow\ s=\pm j\sqrt{\beta A_0}
+\end{align}
+兩個 $j\omega$ 軸上的極點，等幅振盪。所以\textbf{原點有兩個極點的二極點系統可以振盪}。
+\rfig{69}{0.7}{\exref{10.13}（p.~452）}
+
+\exhead{10.14}{452--453}{加一個零點：$H=A_0(1+s/\omega_z)/s^2$}
+到 $P$ 點之前同上；沿 $j\omega$ 往上時零點開始貢獻相位，$|\beta H|=\beta A_0\sqrt{1+\omega^2/\omega_z^2}/\omega^2$ 持續下降，$s\to+j\infty$ 時 $\angle\beta H\to-90^\circ$，曲線以 $-90^\circ$ 到原點。零點使曲線不穿過也不包圍 $(-1,0)$，\textbf{閉迴路穩定}。
+\rfig{70}{0.62}{\exref{10.14}（p.~453）}
+\textbf{PLL 的「悖論」}：近似 Bode 圖（圖 10.71）在 $\omega_1\ll\omega_z$ 處似乎 $|\beta H|>1$ 且 $\angle\beta H=-180^\circ$，好像會振盪。但 $\beta H(j\omega_1)=-\beta A_0(1+j\omega_1/\omega_z)/\omega_1^2$ 的相位\textbf{永遠不會剛好} $180^\circ$：零點即使只貢獻極小相位，也讓 $|\angle\beta H|<180^\circ$；真正的 $180^\circ$ 只出現在 $\omega=0$。
+\rfig{71}{0.3}{原點兩極點加一個零點的 Bode 圖（p.~453）}
+
+\subsection{多次 $180^\circ$ 交越的系統}
+三極點兩零點（圖 10.72）：相位先到 $-180^\circ$（$B$），之後零點使相位回升又穿過 $-180^\circ$（$C$），最後趨近 $-90^\circ$（$D$），而兩次穿越時 $|\beta H|$ 都大於 1。Nyquist 圖兩種情況：
+\begin{itemize}[leftmargin=1.5em]
+  \item $C$ 在 $(-1,0)$ \textbf{左邊}（$B$、$C$ 對應的 $|\beta H|$ 都 $>1$）：從 $(-1,0)$ 畫射線穿過曲線兩次（$P$、$Q$），方向相反，淨包圍 0 次 $\Rightarrow$ \textbf{穩定}（這就是圖 10.72(b) 的 Bode 情況）。
+  \item $(-1,0)$ 在 $C$ 與 $B$ 之間：\textbf{不穩定}。
+\end{itemize}
+\textbf{結論}：若 $|\beta H|>1$ 時 $\angle\beta H$ 穿越 $180^\circ$ \textbf{偶數次}則穩定，\textbf{奇數次}則不穩定（conditionally stable）。
+\rfig{72}{0.72}{三極點兩零點：(a) 極零點、(b) Bode 圖、(c) $\beta H$ contour、(d)(e) 兩種情況（p.~454）}
+
+% =====================================================================
+\section{總比較表：各種補償方式}
+
+\begin{tabularx}{\linewidth}{>{\raggedright}p{2.3cm}>{\raggedright}p{3.2cm}>{\raggedright}p{3.6cm}X}
+\toprule
+方法 & 主極點 $\omega_{p1}$ & 非主極點 $\omega_{p2}$／零點 & 優點與限制\tabularnewline\midrule
+單級：加大 $C_L$（\S4） & $\dfrac{1}{R_{out}C_L}$ 往下移 & 不變；UGB $\le$ 第一非主極點 & 最簡單；$C_L$ 增大 PM 變好；mirror pole 限制頻寬\tabularnewline
+兩級：電容接地 & 降 $\omega_{p,E}$ & 不變（$\approx\omega_{p,A}$） & 頻寬只剩約 $\omega_{p,A}$，電容很大，不採用\tabularnewline
+Miller $C_C$ & $\dfrac{1}{g_{m9}R_LR_SC_C}$ & $\dfrac{g_{m9}}{C_L}$；RHP 零點 $\dfrac{g_{m9}}{C_C}$ & pole splitting；RHP 零點傷 PM；$C_L$ 增大 PM 變差\tabularnewline
+Miller $+R_z$ & 同上 & $\omega_z=\dfrac{1}{C_C(g_{m9}^{-1}-R_z)}$；\newline $R_z=\frac{C_L+C_C}{g_{m9}C_C}$ 時抵消 $\omega_{p2}'$ & 可消除或利用零點；$C_L$ 變動造成 doublet；triode $R_z$ 隨擺幅變化\tabularnewline
+$C_C$ + source follower & $\dfrac{1}{g_{m1}R_LR_SC_C}$ & $\dfrac{g_{m1}}{C_L}$；LHP 零點 $-\dfrac{g_{m2}}{C_C}$ & 去除 RHP 零點；輸出下限受 $V_{GS2}+V_{I2}$ 限制\tabularnewline
+$C_C$ + common gate & $\dfrac{1}{g_{m1}R_LR_SC_C}$ & $\dfrac{g_{m2}R_Sg_{m1}}{C_L}$（再高 $g_{m2}R_S$ 倍）；LHP 零點 & 頻寬大、不限擺幅；對稱 slew 需 $I_3\approx I_{SS}$，耗電\tabularnewline
+$C_C$ 接 cascode 源極 & $\dfrac{1}{R_{eq}g_{m9}R_LC_C}$ & $\dfrac{g_{m4}g_{m9}R_{eq}}{C_L}$；零點 $(g_{m4}R_{eq})\frac{g_{m9}}{C_C}$ & 零點大幅提高；$X$ 點電容可能形成極點\tabularnewline
+\bottomrule
+\end{tabularx}
+
+% =====================================================================
+\section{題型與章末習題解法}\label{sec:problems}
+
+本節題號為課本章末習題（與「例 10.x」不同）。習題若無特別說明，使用課本 Table 2.1 參數：$\mu_nC_{ox}=134.3\,\mu$A/V$^2$、$\mu_pC_{ox}=38.4\,\mu$A/V$^2$、$\lambda_n=0.1$\,V$^{-1}$、$\lambda_p=0.2$\,V$^{-1}$、$V_{DD}=3$\,V、全部飽和。以下數值皆以 Python 驗算。
+
+\subsection{題型一：兩極點系統求 PM 或反求 $A_0$}
+\textbf{辨識特徵}：給 $A_0$ 與兩個極點（或給 PM 反求），$\beta$ 已知。\\
+\textbf{步驟}：
+\begin{enumerate}[leftmargin=2.2em,itemsep=0pt]
+  \item 由 PM 得 \GX{} 的相位條件 $\sum_i\tan^{-1}(\omega_u/\omega_{pi})=180^\circ-\text{PM}$，解出 $\omega_u$。
+  \item 再令 $\beta A_0\big/\prod_i\sqrt{1+(\omega_u/\omega_{pi})^2}=1$ 求 $A_0$。
+  \item 反過來給 $A_0$ 時，先由大小條件解 $\omega_u$，再算相位得 PM。
+\end{enumerate}
+
+\textbf{習題 10.1}（極點 10\,MHz、500\,MHz，$\beta=1$，PM $=60^\circ$）：$\tan^{-1}\frac{f_u}{10}+\tan^{-1}\frac{f_u}{500}=120^\circ\Rightarrow f_u=310.5$\,MHz，
+\begin{align}
+A_0=\sqrt{1+31.05^2}\sqrt{1+0.621^2}=\boxed{36.6}
+\end{align}
+（注意 $f_u$ 已遠超過第一極點，第二極點貢獻 $31.8^\circ$。）
+
+\textbf{習題 10.2}（兩極點重合於 $\omega_p$，PM $=60^\circ$）：$2\tan^{-1}(\omega_u/\omega_p)=120^\circ\Rightarrow\omega_u=\sqrt3\,\omega_p$，大小 $\beta A_0/(1+3)=1\Rightarrow A_0=4/\beta$。(a) 閉迴路增益 1（$\beta=1$）：$A_0=\boxed{4}$；(b) 閉迴路增益 4（$\beta\approx1/4$）：$A_0=\boxed{16}$。
+
+\textbf{習題 10.3}（$A_0=1000$，$f_{p1}=1$\,MHz，$\beta=1$）：(a) $f_{p2}=2$\,MHz：$f_u=44.7$\,MHz，PM $=\boxed{3.8^\circ}$；(b) $f_{p2}=4$\,MHz：$f_u=63.2$\,MHz，PM $=\boxed{4.5^\circ}$。兩者都幾乎不穩定，說明高增益兩極點放大器必須補償。
+
+\textbf{習題 10.4}（單位增益閉迴路在 \GX{} 附近 50\% 峰值）：由第 3 節公式 $\frac{1}{2\sin(\text{PM}/2)}=1.5\Rightarrow\text{PM}=2\sin^{-1}\frac13=\boxed{38.9^\circ}$。
+
+\textbf{習題 10.23}（以 $\beta=1$ 補償到 PM $=60^\circ$，$\beta$ 降為 $\beta_1$ 的新 PM）：補償後兩極點模型，主極點在 \GX{} 附近貢獻 $90^\circ$，$\beta=1$ 時 $\omega_u=\omega_{p2}\tan30^\circ=\omega_{p2}/\sqrt3$，由大小條件得 $A_0\omega_{p1}=\frac23\omega_{p2}$。換成 $\beta_1$，令 $x=\omega_u/\omega_{p2}$：
+\begin{align}
+x\sqrt{1+x^2}=\tfrac23\beta_1,\qquad \text{PM}=90^\circ-\tan^{-1}x
+\end{align}
+$\beta_1=0.5\Rightarrow x=0.318$，PM $=72.4^\circ$；$\beta_1=0.25\Rightarrow$ PM $=80.7^\circ$；$\beta_1=0.1\Rightarrow$ PM $=86.2^\circ$。（忽略 RHP 零點；有零點時 PM 再少一些。）
+
+\subsection{題型二：實際電路斷迴路求 PM}
+\textbf{辨識特徵}：給電晶體電路與節點電容，「compute the phase margin」「break the loop at …」。\\
+\textbf{步驟}：(1) 在\textbf{閘極}斷開（閘極不吸電流，斷開不改變負載），保留斷點的電容；(2) 逐級寫轉移函數，每個節點以「小訊號電阻 $\times$ 電容」估極點；(3) 求 $|\beta H|=1$ 的頻率與相位。
+\rfig{73}{0.38}{習題 10.5 的 transimpedance amplifier（p.~455）}
+\textbf{習題 10.5}（$R_D=1$\,k$\Omega$、$R_F=10$\,k$\Omega$、$g_{m1}=g_{m2}=1/(100\,\Omega)$、$C_A=C_X=C_Y=100$\,fF，$\lambda=\gamma=0$）：在 $X$（$M_2$ 閘極）斷開，迴路為 $X\to$ SF $\to Y\to R_F\to A\to$ CS $\to X$：
+\begin{align}
+\beta H(s)=\underbrace{\frac{g_{m1}R_D}{1+sR_DC_X}}_{\text{CS}}\cdot\frac{1}{1+sR_FC_A}\cdot\frac{g_{m2}}{g_{m2}+sC_Y+\left(R_F+\frac{1}{sC_A}\right)^{-1}}
+\end{align}
+低頻迴路增益 $g_{m1}R_D=10$。極點：$X$ 為 $1/(2\pi R_DC_X)=1.59$\,GHz；$Y$--$A$ 兩節點耦合，解得 158\,MHz（主要是 $R_FC_A$）與 16.1\,GHz（約 $g_{m2}/C_Y$）。數值求解：$f_u=1.23$\,GHz，\textbf{PM $\approx55^\circ$}。\\
+\textbf{習題 10.6}（$R_D=2$\,k$\Omega$）：迴路增益變 20，且 $X$ 極點降為 0.80\,GHz，$f_u=1.48$\,GHz，\textbf{PM $\approx29^\circ$}。\\
+\textbf{習題 10.7}（PM $=45^\circ$ 時的最大電容，另兩個維持 100\,fF）：(a) $C_Y\le\boxed{0.37\,\text{pF}}$；(c) $C_X\le\boxed{0.20\,\text{pF}}$；(b) $C_A$ 增大只會使 $A$ 點更像主極點，PM 單調變好（100\,fF 時已是最小值 $55^\circ$），\textbf{沒有上限}。這正呼應第 4 節：加大主極點電容是補償，加大非主極點電容是破壞。
+
+\begin{minipage}[c]{0.4\linewidth}
+\rfig{74}{0.95}{習題 10.9（p.~456）}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.56\linewidth}
+\textbf{習題 10.9}（$(W/L)_{1-4}=50/0.5$、$I_{SS}=I_1=0.5$\,mA、$C_X=C_Y=0.5$\,pF，單位增益回授接 $M_2$ 閘極）：$g_{m2}=2.59$\,mS（0.25\,mA）、$g_{m4}=3.66$\,mS（0.5\,mA）；$R_X=r_{O2}\parallel r_{O3}=40\,\text{k}\parallel20\,\text{k}=13.3$\,k$\Omega$；$R_Y\approx1/g_{m4}\parallel r_{O4}=269\,\Omega$（忽略 body effect）。
+\end{minipage}\par
+\begin{align}
+\beta A_0=\frac{g_{m2}}{2}R_X\cdot g_{m4}R_Y\approx17.0,\quad f_X=\frac{1}{2\pi R_XC_X}=23.9\,\text{MHz},\quad f_Y=\frac{1}{2\pi R_YC_Y}=1.18\,\text{GHz}
+\end{align}
+(a) $f_u=386$\,MHz，\textbf{PM $\approx75^\circ$}。(b) PM $=60^\circ$ 的最大 $C_Y$：數值解 $C_Y\approx\boxed{1.19\,\text{pF}}$（$f_Y$ 降到 497\,MHz）。\\
+\textbf{習題 10.10}（slew rate）：$X$ 點由 $M_3$ 固定供應 0.25\,mA，$M_2$ 可吸 0--0.5\,mA，故 $X$ 上下 slew 都是 $0.25\,\text{mA}/0.5\,\text{pF}=0.5$\,V/ns；$Y$ 點上升由 $M_4$ 推動、很快，下降受 $I_1/C_Y$ 限制。(a) $I_1/C_Y=1$\,V/ns，整體 SR $\approx\boxed{0.5\,\text{V/ns}}$（由 $X$ 限制）；(b) $C_Y=1.19$\,pF 時下降 SR $=0.5\,\text{mA}/1.19\,\text{pF}\approx\boxed{0.42\,\text{V/ns}}$，上升仍為 0.5\,V/ns。
+
+\begin{trapbox}[常見陷阱：算 PM 時的幾個坑]
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{$\beta$ 是回授係數，不是閉迴路增益}：閉迴路增益 4 對應 $\beta\approx1/4$，迴路增益是 $\beta A_0$。「unity-gain feedback」才是 $\beta=1$（最壞情況）。
+  \item \textbf{差動對單端輸出的轉導是 $g_m/2$}（尾電流源使另一管成為源極退化），習題 10.9 漏掉 $1/2$ 會讓 $\beta A_0$ 加倍、PM 算錯。
+  \item 習題寫「$\lambda=\gamma=0$」中的 $\gamma$ 是 \textbf{body effect}，與第 7 章雜訊的 $\gamma$ 不同。
+  \item 「\GX{} 在 $\omega_{p2}$ 時 PM $=45^\circ$」只在 $\omega_{p1}\ll\omega_{p2}$（主極點已貢獻 $90^\circ$）時成立；兩極點靠近時（習題 10.2、10.3）必須用 $\tan^{-1}$ 實算。
+\end{itemize}
+\end{trapbox}
+
+\subsection{題型三：Miller 補償設計（$C_C$、$R_z$、極零點位置）}
+\textbf{辨識特徵}：兩級 op amp，「compensate \ldots{} by Miller multiplication」「position the zero atop the nondominant pole」（習題 10.11、10.12、10.14、10.15）。\\
+\textbf{步驟}：
+\begin{enumerate}[leftmargin=2.2em,itemsep=0pt]
+  \item 求兩級的 $g_m$、$R_S$（第一級輸出電阻）、$R_L$（第二級輸出電阻）。
+  \item 寫出 $\omega_{p1}'\approx(g_{m2nd}R_LR_SC_C)^{-1}$、$\omega_{p2}'\approx g_{m2nd}/C_L$、RHP 零點 $g_{m2nd}/C_C$。
+  \item PM $=45^\circ$ 的起點 $C_C=\frac{g_{m1}}{g_{m2nd}}C_L$。PM $=60^\circ$ 時要求 $\omega_u=\omega_{p2}'/\sqrt3$，連同第二極點在大小上的 $\sqrt{1+1/3}$ 因子，得 $\frac{g_{m1}}{C_C}=\frac23\omega_{p2}'$（同習題 10.23 的推導，忽略零點），即 $C_C\approx1.5\frac{g_{m1}}{g_{m2nd}}C_L$。
+  \item 抵消零點：$R_z=\frac{C_L+C_C}{g_{m2nd}C_C}$；若問 MOS 實現 $R_z$（習題 10.12）用 (10.35)。
+\end{enumerate}
+代表題：\exref{10.6}、習題 10.11。\textbf{注意}：全差動電路（習題 10.11）每邊各一個 $C_C$，對半電路分析即可。
+
+\subsection{題型四：slew rate}
+\textbf{辨識特徵}：「estimate the slew rate」、大步階輸入、某電晶體關掉。\\
+\textbf{步驟}：(1) 判斷大步階使哪些管子截止，剩下的定電流流經哪個電容；(2) 找虛接地節點（高增益級的輸入）；(3) $\text{SR}=I/C$，並檢查供應電流的管子能否保持飽和、輸出級偏壓電流是否夠驅動 $C_L$（\exref{10.8}：需 $I_1>(1+C_L/C_C)I_{SS}$）；(4) 兩個方向分開算，取較小者。代表題：習題 10.10、10.16、10.22（$C_L$ 下的完整解，輸出先下降再進入斜坡，$\tau=C_L/g_m$）。
+
+\subsection{題型五：Nyquist 判斷}
+\textbf{辨識特徵}：給 $H(s)$（尤其含原點極點或零點），問閉迴路是否穩定。\\
+\textbf{步驟}：(1) 決定 $s$ contour（原點有極點時用小半圓繞過）；(2) 只算 $\omega=0^+$、$\omega\to\infty$ 的大小與相位，以及與負實軸交點；(3) 鏡射；(4) 數 $(-1,0)$ 被順時針包圍次數。速查：一、二個 LHP 極點永遠穩定；三極點看 $Q$ 點 $|\beta H|$；$1/s^2$ 邊界振盪，加零點變穩定；多次 $180^\circ$ 交越看偶數或奇數次。
+
+\begin{cbox}[boxgray]{補充：習題 10.19 doublet 問題的結論}
+開迴路 $H_{open}=\frac{A_0(1+s/\omega_z)}{(1+s/\omega_{p1})(1+s/\omega_{p2})}$ 接成單位增益。在 $\omega_z\approx\omega_{p2}$、$\omega_{p2}\gg(1+A_0)\omega_{p1}$ 時，閉迴路一個極點約在 $(1+A_0)\omega_{p1}$（主要的快速一階響應），另一個極點約在 $\omega_z$ 附近；步階響應會多一項
+\[\left(1-\frac{\omega_z}{\omega_{p2}}\right)e^{-\omega_{p2}t}\]
+振幅正比於極零點失配 $1-\omega_z/\omega_{p2}$，時間常數約 $1/\omega_z$。由於 $\omega_z$ 遠低於閉迴路頻寬，這項會形成\textbf{很慢的 settling 尾巴}；例如 10\% 失配就留下約 10\% 振幅、緩慢衰減的誤差（習題 10.20）。這就是不靠極零點抵消來穩定電路的原因。
+\end{cbox}
+
+\begin{recipebox}[解題流程總整理]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{判斷穩定}：寫 $\beta H(s)$，最壞情況 $\beta=1$；兩極點永遠穩定，三極點以上看 \PX{} 處 $|\beta H|$；含原點極點或多次 $180^\circ$ 交越時用 Nyquist。
+  \item \textbf{求 PM}：解 $|\beta H(j\omega_u)|=1$，$\text{PM}=180^\circ+\angle\beta H(j\omega_u)$；RHP 零點貢獻 $-\tan^{-1}(\omega/\omega_z)$。反求參數時先用相位條件定 $\omega_u$。
+  \item \textbf{PM 與時域}：$|Y/X|_{\omega_u}=\frac{1}{\beta}\frac{1}{2\sin(\text{PM}/2)}$；$45^\circ$ 約 30\% 峰值，$60^\circ$ 最佳。
+  \item \textbf{單級補償}：從 $\angle\beta H=-180^\circ+\text{PM}$ 的頻率以 $-20$\,dB/dec 畫回 $20\log\beta A_0$，得新主極點；$C_L$ 按比例放大；UGB $\le$ 第一非主極點。
+  \item \textbf{兩級 Miller}：$\omega_{p1}'=\frac{1}{g_{m9}R_LR_SC_C}$、$\omega_{p2}'=\frac{g_{m9}}{C_L}$、$\omega_z=\frac{g_{m9}}{C_C}$（RHP）；$C_C\approx\frac{g_{m1}}{g_{m9}}C_L$（$45^\circ$）；$R_z=\frac{C_L+C_C}{g_{m9}C_C}$ 抵消 $\omega_{p2}'$。
+  \item \textbf{Slew}：截止哪些管 $\to$ 哪個電流灌哪個電容 $\to$ $\text{SR}=I/C$；檢查輸出級偏壓 $I_1$ 是否 $>(1+C_L/C_C)I_{SS}$。
+\end{enumerate}
+\end{recipebox}
+
+\end{document}
