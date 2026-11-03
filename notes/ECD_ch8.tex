@@ -1,0 +1,858 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Noto Serif CJK TC}[BoldFont={Noto Serif CJK TC Bold}]
+\setsansfont{Noto Sans CJK TC}[BoldFont={Noto Sans CJK TC Bold}]
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt
+\usepackage{amsmath,amssymb,bm}
+\usepackage{tabularx,booktabs,array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.35}
+
+\definecolor{bluebg}{HTML}{F5F8FB}  \definecolor{blueframe}{HTML}{AFC0D2}  \definecolor{bluetitle}{HTML}{1F3864}
+\definecolor{greenbg}{HTML}{F3F9F4} \definecolor{greenframe}{HTML}{A8CDB1} \definecolor{greentitle}{HTML}{1E5631}
+\definecolor{redbg}{HTML}{FCF4F4}   \definecolor{redframe}{HTML}{DDB1B1}   \definecolor{redtitle}{HTML}{8B1E1E}
+\definecolor{amberbg}{HTML}{FCF8EE} \definecolor{amberframe}{HTML}{DCC896} \definecolor{ambertitle}{HTML}{7A5200}
+\definecolor{graybg}{HTML}{F6F6F6}  \definecolor{grayframe}{HTML}{C4C4C4}  \definecolor{graytitle}{HTML}{333333}
+\newcommand{\boxmark}{\rule[0.02em]{0.62em}{0.62em}}
+\tcbset{
+  boxblue/.style ={colback=bluebg, colbacktitle=bluebg, colframe=blueframe, coltitle=bluetitle},
+  boxgreen/.style={colback=greenbg,colbacktitle=greenbg,colframe=greenframe,coltitle=greentitle},
+  boxred/.style  ={colback=redbg,  colbacktitle=redbg,  colframe=redframe,  coltitle=redtitle},
+  boxamber/.style={colback=amberbg,colbacktitle=amberbg,colframe=amberframe,coltitle=ambertitle},
+  boxgray/.style ={colback=graybg, colbacktitle=graybg, colframe=grayframe, coltitle=graytitle},
+  notebox/.style={enhanced,breakable,sharp corners,boxrule=0.6pt,titlerule=0pt,
+    fonttitle=\bfseries\large,toptitle=6pt,bottomtitle=2pt,
+    left=10pt,right=10pt,top=4pt,bottom=8pt,before skip=10pt,after skip=12pt,
+    boxblue}}
+\newtcolorbox{cbox}[2][boxblue]{notebox,#1,title={\boxmark\enspace #2}}
+\newtcolorbox{takeaway}[1][重點提示]{notebox,boxamber,title={\boxmark\enspace #1}}
+\newtcolorbox{derivationbox}[1][完整推導]{notebox,boxblue,title={\boxmark\enspace #1}}
+\newtcolorbox{trapbox}[1][常見陷阱]{notebox,boxred,title={\boxmark\enspace #1}}
+\newtcolorbox{recipebox}[1][解題流程]{notebox,boxgreen,title={\boxmark\enspace #1}}
+
+% ===== 記號 =====
+\newcommand{\pll}{\,\|\,}
+\newcommand{\gm}{g_m}
+\newcommand{\Tsc}{T_{\text{SC}}}
+\newcommand{\Toc}{T_{\text{OC}}}
+% ===== 例題標示 =====
+\definecolor{extag}{HTML}{3A3A3A}
+\definecolor{extagbg}{HTML}{E4E4E4}
+\newcommand{\extag}[1]{\colorbox{extagbg}{\textcolor{extag}{\sffamily\bfseries\,例 #1\,}}}
+\newcommand{\exhead}[3]{\par\medskip\noindent\extag{#1}\enspace{\bfseries #3}\enspace{\small\color{black!55}(p.#2)}\par\nopagebreak\smallskip}
+\newcommand{\exref}[1]{\textcolor{extag}{\textbf{\sffamily 例 #1}}}
+\newcommand{\rfig}[3]{\begin{center}\includegraphics[width=#2\linewidth]{../fig/ch8/fig8_#1.png}\\[0.1em]{\small\sffamily 圖 8.\number#1\quad #3}\end{center}}
+
+\begin{document}
+\begin{center}{\LARGE\bfseries\sffamily ECD 單元複習講義：Feedback（回授）}\\[0.3em]{\large Razavi, \emph{Design of Analog CMOS Integrated Circuits}, Ch.~8（pp.~274--343）}\end{center}
+
+\textbf{記號約定}：$A$、$A_0$、$A_{OL}$ 指\textbf{開迴路增益}（forward amplifier 的增益），$\beta$ 指\textbf{回授因子}，$\beta A$ 是\textbf{迴路增益}（loop gain，無因次）；兩者不可混用（課本 p.276 腳註特別提醒）。$\beta$ 的單位依拓撲而定：電壓—電壓為無因次、電流—電壓為電阻 $R_F$、電壓—電流為電導 $g_{mF}$。$a\pll b$ 表示並聯。本章習題中的「$\lambda=\gamma=0$」，$\gamma$ 指 \textbf{body effect 係數}，不是第 7 章的通道熱雜訊係數。RR 為 return ratio（回返比），$\Toc$、$\Tsc$ 為 Blackman 定理中埠開路／短路時的迴路增益。圖片皆截取自課本，圖說後標註頁碼。課本的 Examples 一律以 \extag{8.x} 標籤開頭、獨立成段，內文提到時以 \exref{8.x} 標示；章末習題寫成「習題 8.x」以示區別。
+
+\begin{takeaway}[考試重點地圖]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{「1 + 迴路增益」是全章唯一的主角}：閉迴路增益 $=A/(1+\beta A)$，頻寬乘 $(1+\beta A_0)$，非線性除以約 $(1+\beta A)$，輸入、輸出阻抗乘或除 $(1+\beta A)$。先會算迴路增益，其餘都跟著出來。
+  \item \textbf{迴路增益怎麼算}：主輸入歸零 → 在\textbf{電晶體閘極}斷開（不需處理負載）→ 沿迴路方向注入 $V_t$ → 回來的 $V_F$，迴路增益 $=-V_F/V_t$。
+  \item \textbf{四種拓撲的辨識與阻抗變化}：輸出端「感測電壓→$Z_{out}$ 下降、感測電流→$Z_{out}$ 上升」；輸入端「回送電壓（串聯）→$Z_{in}$ 上升、回送電流（並聯）→$Z_{in}$ 下降」（第 \ref{sec:topo} 節比較表）。
+  \item \textbf{負載效應（two-port 法）}：斷開迴路時，把回授網路在兩端的負載保留下來；口訣「另一端並聯接法就短路、串聯接法就開路」（第 \ref{sec:loading} 節）。
+  \item \textbf{不斷迴路的精確法}：Bode 的 $A$–$D$ 係數 $\Rightarrow A+\dfrac{g_mBC}{1-g_mD}$；Blackman 阻抗定理 $Z=A\dfrac{1+\Tsc}{1+\Toc}$（第 \ref{sec:bode}、\ref{sec:blackman} 節）。
+  \item \textbf{考古題}：專題資料夾中的〈Midterm Problems〉沒有收錄第 8 章題目，因此第 \ref{sec:problems} 節改以章末習題 8.1、8.4、8.19、8.23 示範解法並以 Python 驗算。
+\end{enumerate}
+\end{takeaway}
+
+% =====================================================================
+\section{回授的基本架構：閉迴路增益 $=H/(1+GH)$，接近 $1/\beta$}
+
+\rfig{05}{0.42}{迴路增益的計算：輸入設為零、斷開迴路、注入測試信號（p.277）}
+
+負回授系統由四個元素組成：(1) 前饋放大器 $H(s)$；(2) 感測輸出的方式；(3) 回授網路 $G(s)$；(4) 產生誤差的減法器。由 $Y=H(X-GY)$ 得
+\begin{align}
+  \frac{Y(s)}{X(s)} = \frac{H(s)}{1+G(s)H(s)} \tag{8.2}
+\end{align}
+本書大多數情況 $G$ 與頻率無關，記為 $\beta$。設計良好的負回授會讓誤差 $X-\beta Y$ 很小，所以回授網路的輸出 $\beta Y$ 是輸入的精確「複本」，$H$ 的輸入端是 \textbf{virtual ground}（信號振幅很小）。
+
+\textbf{迴路增益的標準算法}（Fig.~8.5）：主輸入設為（ac）零，在某處斷開迴路，往「正確方向」注入測試信號 $V_t$，沿迴路追蹤得到回來的 $V_F$。$V_F/V_t=-\beta A$，所以
+\[
+  \boxed{\text{loop gain}=-\frac{V_F}{V_t}=\beta A}
+\]
+迴路增益無因次。算迴路增益時「主輸入、主輸出在哪裡」已經消失，所以外觀不同的電路可能有相同的迴路增益（\exref{8.1}）。
+
+\rfig{03}{0.5}{(a) 簡單 CS 級；(b) 加上電容回授（p.275）}
+
+\textbf{範例：電容回授 CS 級。}低頻時 $C_2$ 從輸出抽的電流可忽略，所以 $V_{out}/V_X=-g_{m1}r_{O1}$。由 $X$ 點電流相等 $(V_{out}-V_X)C_2s=(V_X-V_{in})C_1s$，代入 $V_X=-V_{out}/(g_{m1}r_{O1})$：
+\begin{align}
+  V_{out}\Big(1+\frac{1}{g_{m1}r_{O1}}\Big)C_2 &= \Big(-\frac{V_{out}}{g_{m1}r_{O1}}-V_{in}\Big)C_1\\
+  \Rightarrow\ \frac{V_{out}}{V_{in}} &= -\frac{1}{\Big(1+\dfrac{1}{g_{m1}r_{O1}}\Big)\dfrac{C_2}{C_1}+\dfrac{1}{g_{m1}r_{O1}}}
+  \ \xrightarrow{g_{m1}r_{O1}\gg1}\ \boxed{-\frac{C_1}{C_2}} \tag{8.3, 8.4}
+\end{align}
+增益由電容\textbf{比例}決定，不隨製程、溫度變動。迴路增益：$V_{in}=0$，從輸出端注入 $V_t$，$V_X=V_t\,C_2/(C_1+C_2)$，再經 $-g_{m1}r_{O1}$ 回到輸出：
+\[
+  \beta A=\frac{C_2}{C_1+C_2}\,g_{m1}r_{O1} \tag{8.8}
+\]
+\textbf{注意：}不能說「$C_2$ 在低頻不導通所以 $V_X=0$」，因為 $C_1$ 在低頻同樣是高阻抗，分壓比仍是 $C_2/(C_1+C_2)$（p.276 腳註）。
+
+\exhead{8.1}{277}{Feedback CG 級的迴路增益}
+\rfig{07}{0.62}{(a) 回授 CG 級；(b) 輸入設為零；(c) 重畫（p.277）}
+把 $V_{in}$ 設為零 [Fig.~8.7(b)]，重畫成 (c) 後就是 Fig.~8.3(b) 在 $V_{in}=0$ 的樣子，所以迴路增益與式 (8.8) 相同。\textbf{重點}：算迴路增益時不再分主輸入與主輸出，看起來不同的拓撲可以有相同的迴路增益。
+
+% =====================================================================
+\section{回授的四個好處都來自 $1+\beta A$}
+
+\subsection{增益去敏感化（gain desensitization）}
+\begin{align}
+  \frac{Y}{X}=\frac{A}{1+\beta A}\approx\frac1\beta\Big(1-\frac{1}{\beta A}\Big)\qquad(\beta A\gg1) \tag{8.5, 8.6}
+\end{align}
+閉迴路增益一階由 $\beta$ 決定；$A$ 即使變動一倍，$Y/X$ 只變動約 $1/(\beta A)$ 的比例。$\beta A$ 越大越準，但 $\beta$ 越大閉迴路增益 $1/\beta$ 越小，所以精準度與閉迴路增益之間有取捨：\textbf{用高增益放大器換取低但準確的增益}。課本提醒「回授改善 stability」指的是增益穩定，不是頻率穩定性；頻率穩定性通常會因負回授變差（Ch.~10）。
+
+$A$ 的變動來源不只製程與溫度，也可以是頻率（$A$ 在高頻下降）和負載（推重負載時 $A$ 下降）。這就是回授能擴頻寬、降輸出阻抗的根本原因。
+
+\subsection{端點阻抗的改變}
+\rfig{08}{0.75}{(a) 帶回授的 CG 電路；(b) 開迴路；(c) 計算輸入電阻（p.278）}
+CG 級中，$C_1$-$C_2$ 感測輸出電壓並送到電流源 $M_2$ 的閘極。忽略 $\lambda$ 與 $C_1$ 的電流，開迴路 $R_{in,open}=1/(g_{m1}+g_{mb1})$。閉迴路 [Fig.~8.8(c)]：
+\begin{align}
+  V_{out}&=(g_{m1}+g_{mb1})V_XR_D,\qquad V_P=V_{out}\frac{C_1}{C_1+C_2}\\
+  I_X&=(g_{m1}+g_{mb1})V_X+g_{m2}(g_{m1}+g_{mb1})\frac{C_1}{C_1+C_2}R_DV_X\\
+  \Rightarrow R_{in,closed}&=\frac{1}{g_{m1}+g_{mb1}}\cdot\frac{1}{1+g_{m2}R_D\dfrac{C_1}{C_1+C_2}} \tag{8.15}
+\end{align}
+輸入電阻被除以 $1+$迴路增益，迴路增益為 $g_{m2}R_DC_1/(C_1+C_2)$。
+
+\rfig{09}{0.6}{(a) 帶回授的 CS 級；(b) 計算輸出電阻（p.279）}
+同理，Fig.~8.9 中 $C_1$、$C_2$、$M_2$ 感測輸出電壓並把電流送回 $M_1$ 源極。輸入設為零，$I_X=V_X/R_D+I_{D1}$，其中 $I_{D1}=V_X\frac{C_1}{C_1+C_2}g_{m2}\frac{R_S}{R_S+1/(g_{m1}+g_{mb1})}$，得
+\begin{align}
+  \frac{V_X}{I_X}=\frac{R_D}{1+\dfrac{g_{m2}R_S(g_{m1}+g_{mb1})R_D}{(g_{m1}+g_{mb1})R_S+1}\cdot\dfrac{C_1}{C_1+C_2}} \tag{8.17}
+\end{align}
+分母同樣是 $1+$迴路增益：這種回授降低輸出電阻。
+
+\subsection{頻寬增加 $(1+\beta A_0)$ 倍，增益等比例下降}
+設前饋放大器為單極點 $A(s)=A_0/(1+s/\omega_0)$：
+\begin{align}
+  \frac YX(s)=\frac{\dfrac{A_0}{1+s/\omega_0}}{1+\beta\dfrac{A_0}{1+s/\omega_0}}
+  =\frac{A_0}{1+\beta A_0+s/\omega_0}
+  =\frac{\dfrac{A_0}{1+\beta A_0}}{1+\dfrac{s}{(1+\beta A_0)\omega_0}} \tag{8.21}
+\end{align}
+\rfig{10}{0.62}{回授造成的頻寬改變（p.280）}
+低頻增益降為 $A_0/(1+\beta A_0)$，極點移到 $(1+\beta A_0)\omega_0$：\textbf{單極點系統的增益頻寬積 $A_0\omega_0$ 不變}。頻寬增加同樣來自去敏感化：$A$ 隨頻率下降的影響被回授壓下來，直到 $\beta A$ 降到接近 1 為止。
+
+既然 GBW 不變，回授如何「加速」？課本的例子（Fig.~8.11）：要把 20\,MHz 方波放大 100 倍，手上只有 $A_0=100$、$f_{3dB}=10$\,MHz 的單極點放大器，時間常數 $\tau=1/(2\pi\cdot10\text{\,MHz})\approx16$\,ns，波形嚴重變圓。改用兩級各加回授（增益 10、頻寬 100\,MHz、$\tau\approx1.6$\,ns）串接，總增益仍為 100，響應快得多；代價是功耗加倍。
+\rfig{11}{0.62}{用 (a) 10\,MHz 放大器與 (b) 兩級 100\,MHz 回授放大器放大 20\,MHz 方波（p.281）}
+
+\subsection{降低非線性}
+非線性等於斜率（小信號增益）隨工作點變化。設區域 1、2 的開迴路增益為 $A_1$、$A_2=A_1-\Delta A$：
+\begin{align}
+  r_{open}&=\frac{A_2}{A_1}=1-\frac{\Delta A}{A_1} \tag{8.23}\\
+  r_{closed}&=\frac{A_2/(1+\beta A_2)}{A_1/(1+\beta A_1)}=\frac{1+\dfrac{1}{\beta A_1}}{1+\dfrac{1}{\beta A_2}}
+  \approx1-\frac{\dfrac{1}{\beta A_2}-\dfrac{1}{\beta A_1}}{1+\dfrac{1}{\beta A_2}}
+  \approx 1-\frac{\Delta A}{1+\beta A_2}\cdot\frac{1}{A_1} \tag{8.28}
+\end{align}
+與 (8.23) 比較，增益比例的偏差縮小約 $1+\beta A_2$ 倍，所以閉迴路線性度較好（Ch.~14 詳述）。
+
+% =====================================================================
+\section{放大器的四種型態與感測、相加的方式}
+
+\rfig{13}{0.75}{四種放大器及其理想模型（p.282）}
+\begin{itemize}
+  \item \textbf{感測電壓}的電路要有高輸入阻抗（像電壓表），\textbf{感測電流}的要有低輸入阻抗（像電流表）。
+  \item \textbf{輸出電壓}的電路要有低輸出阻抗（像電壓源），\textbf{輸出電流}的要有高輸出阻抗（像電流源）。
+  \item Transimpedance 增益單位為 $\Omega$（$R_0=V_{out}/I_{in}$，$I_{in}$ 流入放大器為正），transconductance 增益單位為 S。
+\end{itemize}
+最簡單的實現：CS 級（電壓放大）、CG 級（transimpedance，源極電流→汲極電壓）、CS 電晶體（transconductance，V/I 轉換器）、CG 級（電流放大）。Fig.~8.15 加上 source follower 或 cascode 改善輸出阻抗與增益。
+
+\exhead{8.2}{283}{Transconductance 放大器的增益}
+Fig.~8.15(c) 為 CS 級 $M_1$ 後接 CS 電晶體 $M_2$ 輸出電流：
+\[
+  G_m=\frac{V_X}{V_{in}}\cdot\frac{I_{out}}{V_X}=-g_{m1}(r_{O1}\pll R_D)\cdot g_{m2} \tag{8.30}
+\]
+
+\exhead{8.3}{284}{非理想放大器的模型}
+\rfig{16}{0.62}{四種非理想放大器模型（p.284）}
+非理想電壓放大器會從輸入抽電流、有有限輸出阻抗 [(a)]。非理想 transimpedance 放大器的 $Z_{in}$ 與輸入埠\textbf{串聯} [(b)]，電壓放大器的 $Z_{in}$ 則與輸入埠\textbf{並聯}：這樣才能在理想情況下（前者 $Z_{in}\to\infty$、後者 $Z_{in}\to0$）回到 Fig.~8.13 的理想模型。同理，輸出電壓的放大器 $Z_{out}$ 串聯，輸出電流的放大器 $Z_{out}$ 並聯。這些模型先忽略了放大器內部的回授（例如 $C_{GD}$）。
+
+\subsection{感測與相加：辨識拓撲的關鍵}
+\rfig{19}{0.62}{感測、相加電壓與電流的實際方法（p.285）}
+\begin{itemize}
+  \item \textbf{感測電壓}：與輸出埠並聯（電阻或電容分壓器），也稱 shunt feedback。
+  \item \textbf{感測電流}：與輸出串聯一個小電阻，用其壓降代表電流，也稱 series feedback。
+  \item \textbf{相加電壓}：兩者串聯；實際上用差動對 (d)，或單一電晶體一端接 $V_{in}$、另一端接 $V_F$ [(e)、(f)，因 $I_{D1}$ 是 $V_{in}-V_F$ 的函數]。
+  \item \textbf{相加電流}：兩者並聯於同一節點 [(g)、(h)]。
+\end{itemize}
+\textbf{辨識技巧}：電壓相減時，輸入信號與回授信號接在\textbf{兩個不同節點}；電流相減時，兩者接在\textbf{同一個節點}。
+
+% =====================================================================
+\section{四種回授拓撲：感測輸出決定 $Z_{out}$，回送方式決定 $Z_{in}$}\label{sec:topo}
+
+拓撲名稱的第一個字是\textbf{在輸出端感測的量}，第二個字是\textbf{回送到輸入的量}。另一種命名（series-shunt 等）則是「輸入接法－輸出接法」。
+
+\subsection{電壓—電壓回授（series-shunt）}
+\rfig{21}{0.5}{電壓—電壓回授：回授網路與輸出並聯、與輸入串聯（p.287）}
+理想回授網路輸入阻抗無窮大、輸出阻抗為零。$V_F=\beta V_{out}$、$V_e=V_{in}-V_F$、$V_{out}=A_0(V_{in}-\beta V_{out})$：
+\[
+  \frac{V_{out}}{V_{in}}=\frac{A_0}{1+\beta A_0} \tag{8.31}
+\]
+\rfig{22}{0.55}{(a) 用電阻分壓器感測輸出；(b) 電壓—電壓回授放大器（p.287）}
+
+\textbf{直觀}：負回授會讓輸出維持為輸入的縮放複本。輸出接上越來越小的 $R_L$ 時，開迴路的輸出會依 $R_L/(R_L+R_{out})$ 下降；閉迴路只要迴路增益夠大，$V_{out}\approx V_{in}/\beta$ 與 $R_L$ 無關，等於一個電壓源，所以輸出阻抗低。
+
+\begin{derivationbox}[完整推導與計算步驟：電壓—電壓回授的 $R_{out}$ 與 $R_{in}$]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{輸出阻抗}（Fig.~8.24）：輸入設為零，輸出加 $V_X$。$V_F=\beta V_X$，$V_e=-\beta V_X$，放大器內部電壓 $V_M=-\beta A_0V_X$。忽略回授網路抽的電流：
+  \[
+    I_X=\frac{V_X-(-\beta A_0V_X)}{R_{out}}\ \Rightarrow\ \boxed{\frac{V_X}{I_X}=\frac{R_{out}}{1+\beta A_0}} \tag{8.32}
+  \]
+  \item \textbf{輸入阻抗}（Fig.~8.28）：$V_e=I_XR_{in}$，$V_F=\beta A_0I_XR_{in}$，KVL：$V_X=V_e+V_F$：
+  \[
+    I_XR_{in}=V_X-\beta A_0I_XR_{in}\ \Rightarrow\ \boxed{\frac{V_X}{I_X}=R_{in}(1+\beta A_0)} \tag{8.38}
+  \]
+  \item \textbf{直觀}：回送電壓與輸入串聯，$R_{in}$ 只承受 $V_{in}$ 的一小部分 $V_e$，抽的電流變小，所以輸入阻抗上升。
+\end{enumerate}
+\end{derivationbox}
+
+所以電壓—電壓回授\textbf{降低輸出阻抗、提高輸入阻抗}，適合當作高阻抗信號源與低阻抗負載之間的 buffer。Fig.~8.22(b) 中輸出阻抗降低 $1+A_0R_2/(R_1+R_2)$ 倍。
+
+\exhead{8.4}{288}{電容回授的非反相放大器：閉迴路增益與輸出電阻}
+\rfig{25}{0.68}{簡單 op amp 加電容分壓回授（p.288）}
+低頻下 $C_1$、$C_2$ 從輸出抽的電流可忽略。斷開迴路時把 $C_1$ 上端接地 [Fig.~8.25(b)]，開迴路增益為 $g_{m1}(r_{O2}\pll r_{O4})$。迴路增益 [Fig.~8.25(c)]：
+\begin{align}
+  V_F=-V_t\frac{C_1}{C_1+C_2}g_{m1}(r_{O2}\pll r_{O4})
+  \ \Rightarrow\ \beta A_0=\frac{C_1}{C_1+C_2}g_{m1}(r_{O2}\pll r_{O4}) \tag{8.34}
+\end{align}
+\begin{align}
+  A_{closed}=\frac{g_{m1}(r_{O2}\pll r_{O4})}{1+\dfrac{C_1}{C_1+C_2}g_{m1}(r_{O2}\pll r_{O4})}\approx1+\frac{C_2}{C_1},\qquad
+  R_{out,closed}=\frac{r_{O2}\pll r_{O4}}{1+\beta A_0}\approx\Big(1+\frac{C_2}{C_1}\Big)\frac{1}{g_{m1}} \tag{8.35--8.37}
+\end{align}
+\textbf{重要觀察}：即使開迴路輸出電阻很高，閉迴路輸出電阻與 $r_{O2}\pll r_{O4}$ 無關，因為開迴路增益同樣正比於 $r_{O2}\pll r_{O4}$，兩者相消。
+
+\exhead{8.5}{289}{反相放大器的電容實現}
+\rfig{26}{0.55}{(a) op amp 反相放大器；(b) 用電容實現（p.289）}
+$V_{in}$ 設為零後，Fig.~8.26(b) 與 Fig.~8.25(a) 無法區分，所以迴路增益同 (8.34)、輸出阻抗同 (8.36)。兩電路閉迴路增益分別約為 $1+C_2/C_1$ 與 $-C_2/C_1$。課本留了一題：增益都要 4 時，誰的迴路增益較高？\textbf{（本講義補答）}非反相需 $C_2/C_1=3$，$\beta=C_1/(C_1+C_2)=1/4$；反相需 $C_2/C_1=4$，$\beta=1/5$。所以\textbf{非反相組態}的迴路增益較高（高 25\%）。
+
+\exhead{8.6}{290}{電壓—電壓回授的 CG 級：輸入電阻上升}
+\rfig{29}{0.62}{CG 級置於電壓—電壓回授中（p.291）}
+回授電壓接閘極、輸入接源極，兩者在不同節點相減（電壓相加）。開迴路 $R_{in}=(g_{m1}+g_{mb1})^{-1}$；迴路增益 $-V_F/V_t=g_{m1}R_DC_1/(C_1+C_2)$：
+\[
+  R_{in,closed}=\frac{1}{g_{m1}+g_{mb1}}\Big(1+\frac{C_1}{C_1+C_2}g_{m1}R_D\Big) \tag{8.39}
+\]
+\textbf{直觀}：$V_{in}$ 下降 $\Delta V$ 使輸出下降，閘極電壓跟著下降，所以 $V_{GS1}$ 的變化小於 $\Delta V$，電流變化小於 $(g_m+g_{mb})\Delta V$，等效電阻變大。與 Fig.~8.8 的電流回授（輸入電阻下降）對照。
+
+\subsection{電流—電壓回授（series-series）}
+\rfig{30}{0.45}{電流—電壓回授（p.291）}
+用小電阻串聯在輸出電流路徑上，壓降當回授電壓。$\beta$ 的單位為電阻，記為 $R_F$。$G_m$ 級\textbf{必須有有限負載} $Z_L$ 才能輸出電流。$V_F=R_FI_{out}$，$I_{out}=G_m(V_{in}-R_FI_{out})$：
+\[
+  \frac{I_{out}}{V_{in}}=\frac{G_m}{1+G_mR_F} \tag{8.40}
+\]
+理想回授網路的輸入、輸出阻抗皆為零。迴路增益的驗證：輸入設零，把回授網路從輸出拆下並短路輸出，注入 $I_t$，$V_F=R_FI_t$，$I_{out}=-G_mR_FI_t$，迴路增益 $=G_mR_F$。
+
+感測輸出電流使輸出像電流源，所以\textbf{輸出阻抗上升}。設 $R_{out}$ 與輸出並聯（$G_m$ 模型是電流源），$V_F=R_FI_X$，$-R_FI_XG_m=I_X-V_X/R_{out}$：
+\[
+  \frac{V_X}{I_X}=R_{out}(1+G_mR_F) \tag{8.41}
+\]
+輸入端回送的是電壓，所以同電壓—電壓回授，$R_{in}$ 也乘 $1+G_mR_F$（式 8.44）。結論：電流—電壓回授\textbf{提高輸入與輸出阻抗}、降低 transconductance；高輸出阻抗在 Ch.~9 的高增益 op amp 中很有用。
+
+\exhead{8.7}{293}{定電流電池充電器}
+\rfig{33}{0.58}{(a) 電池充電電路；(b) 計算迴路增益（p.293）}
+在輸出電流路徑串一個小電阻 $r$，其電壓經 $A_1$ 放大後與 $V_{REF}$ 比較。迴路增益很大時 $A_1rI_{out}\approx V_{REF}$，即 $I_{out}\approx V_{REF}/(A_1r)$。迴路增益 $V_F/V_t\approx-g_mrA_1$，所以負載看到的阻抗
+\[
+  R_{out,closed}=(1+g_mrA_1)(r_O+r) \tag{8.43}
+\]
+$Z_L$ 由更好的電流源驅動。
+
+\subsection{電壓—電流回授（shunt-shunt）}
+感測輸出電壓、回送成比例的電流；前饋為 transimpedance $R_0$，回授因子為電導 $g_{mF}$，理想回授網路輸入、輸出阻抗皆為無窮大。$I_F=g_{mF}V_{out}$，$I_e=I_{in}-I_F$，$V_{out}=R_0I_e$：
+\[
+  \frac{V_{out}}{I_{in}}=\frac{R_0}{1+g_{mF}R_0} \tag{8.45}
+\]
+輸入端 $R_{in}$ 與輸入埠串聯 [Fig.~8.38(a)]，$I_F=I_X-V_X/R_{in}$ 且 $(V_X/R_{in})R_0g_{mF}=I_F$；輸出端 $V_M=-R_0g_{mF}V_X$：
+\[
+  \frac{V_X}{I_X}\Big|_{in}=\frac{R_{in}}{1+g_{mF}R_0},\qquad \frac{V_X}{I_X}\Big|_{out}=\frac{R_{out}}{1+g_{mF}R_0} \tag{8.49, 8.50}
+\]
+電壓—電流回授\textbf{同時降低輸入與輸出阻抗}。
+
+\exhead{8.8}{294}{CG 級的 transimpedance}
+\rfig{36}{0.55}{(a) 電容分壓器把輸出回送到 $M_1$ 閘極；(b) 計算迴路增益（p.295）}
+$C_1$-$C_2$ 感測輸出電壓，送到 $M_1$ 閘極，$M_1$ 產生電流從 $I_{in}$ 中減去。開迴路 transimpedance 為核心 CG 級的 $R_D$；迴路增益（$I_{in}=0$，在輸出斷開）為 $\frac{C_1}{C_1+C_2}g_{m1}R_D$：
+\[
+  R_{tot}=\frac{R_D}{1+\dfrac{C_1}{C_1+C_2}g_{m1}R_D} \tag{8.47}
+\]
+
+\exhead{8.9}{295}{用電壓源驅動時，迴路增益為何「看似」為零（重要觀念）}
+\rfig{37}{0.6}{(a) 以電壓源驅動；(b) 看似迴路增益為零（p.295）}
+由前例，$R_{in}=\dfrac{1}{g_{m2}}\cdot\dfrac{1}{1+\frac{C_1}{C_1+C_2}g_{m1}R_D}$（式 8.48）。有學生改用電壓源驅動輸入，把 $V_{in}$ 設為零後發現迴路被短路，迴路增益為零，於是說輸入阻抗不受回授影響。錯在哪？
+
+\textbf{回送電流到輸入，前提是電路由電流源驅動}：一般負回授系統要求回送量與輸入量同一種因次。Fig.~8.37(a) 回送電流卻用電壓驅動，不對應到標準架構，所以不能用「把輸入電壓設為零再斷迴路」來求迴路增益。輸入阻抗仍是 (8.48)；第 \ref{sec:blackman} 節會用 Blackman 定理再處理（\exref{8.28}、\exref{8.29}）。
+
+\exhead{8.10}{296}{電阻回授 CS 級的輸入、輸出阻抗}
+\rfig{39}{0.5}{(a) 電阻回授 CS 級；(b) 斷開迴路（p.296）}
+$R_F$ 感測輸出電壓、回送電流到輸入。假設 $R_F\gg R_D$，斷開迴路得迴路增益 $g_mR_D$。開迴路輸入阻抗 $R_F$：
+\[
+  R_{in,closed}=\frac{R_F}{1+g_mR_D},\qquad
+  R_{out,closed}=\frac{R_D}{1+g_mR_D}=\frac{1}{g_m}\pll R_D \tag{8.51--8.53}
+\]
+$R_{out,closed}$ 正好是二極體接法電晶體與 $R_D$ 的並聯。輸入阻抗的下降與 Miller 效應一致：閘極到汲極增益約 $-g_mR_D$，$R_F$ 等效成接地電阻 $R_F/(1+g_mR_D)$。
+
+\textbf{應用：光纖接收器的 TIA。}光二極體電流若直接流過 $R_1$，頻寬只有 $1/(2\pi R_1C_{D1})$（$C_{D1}$ 為二極體大接面電容）。改用電壓放大器 $A$ 加回授電阻 $R_1$ [Fig.~8.40(b)]，輸入阻抗降為 $R_1/(1+A)$，輸出 $\approx-R_1I_{D1}$，頻寬升為 $(1+A)/(2\pi R_1C_{D1})$（前提是 $A$ 本身頻寬夠寬）。
+\rfig{40}{0.62}{用 (a) 電阻 $R_1$ 與 (b) transimpedance 放大器偵測光二極體電流（p.297）}
+
+\subsection{電流—電流回授（shunt-series）}
+前饋為電流增益 $A_I$，回授網路為電流比 $\beta$。閉迴路電流增益 $A_I/(1+\beta A_I)$，輸入阻抗除以 $1+\beta A_I$，輸出阻抗乘以 $1+\beta A_I$。實例 Fig.~8.42：$M_2$ 的源、汲極電流相等，在源極串 $R_S$ 監測輸出電流，$R_F$ 再把一部分電流送回輸入節點。
+\rfig{42}{0.3}{電流—電流回授實例（p.298）}
+
+\subsection{四種拓撲比較表}
+\begin{tabularx}{\linewidth}{>{\raggedright}p{2.2cm}>{\raggedright}p{1.9cm}>{\raggedright}p{2.6cm}>{\centering}p{1.2cm}>{\centering}p{1.2cm}>{\raggedright\arraybackslash}X}
+\toprule
+拓撲（感測－回送）& 別名 & 閉迴路增益 & $Z_{in}$ & $Z_{out}$ & 典型電路 \\\midrule
+電壓－電壓 & series-shunt & $\dfrac{A_0}{1+\beta A_0}$（$\beta$ 無因次）& $\times(1+\beta A)$ & $\div(1+\beta A)$ & 非反相放大器、Fig.~8.25、buffer \\
+電流－電壓 & series-series & $\dfrac{G_m}{1+G_mR_F}$ & $\times(1+\beta A)$ & $\times(1+\beta A)$ & 源極退化、充電器、穩流源 \\
+電壓－電流 & shunt-shunt & $\dfrac{R_0}{1+g_{mF}R_0}$ & $\div(1+\beta A)$ & $\div(1+\beta A)$ & 電阻回授 CS、TIA \\
+電流－電流 & shunt-series & $\dfrac{A_I}{1+\beta A_I}$ & $\div(1+\beta A)$ & $\times(1+\beta A)$ & Fig.~8.42 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{記法}：輸出端感測什麼就「穩住」什麼（穩電壓→像電壓源→$Z_{out}$ 小；穩電流→像電流源→$Z_{out}$ 大）；輸入端回送電壓（串聯）就把 $Z_{in}$ 撐大，回送電流（並聯）就把 $Z_{in}$ 拉小。
+
+\begin{trapbox}[常見陷阱：拓撲辨識與迴路增益]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{輸入與回授在同一節點 → 電流相加；在不同節點（閘極 vs 源極）→ 電壓相加}。CG 級的 $V_F$ 接閘極、$V_{in}$ 接源極是電壓相加（\exref{8.6}）；Fig.~8.36 的 $M_1$ 汲極電流與 $I_{in}$ 在同一節點相減是電流相加（\exref{8.8}）。
+  \item \textbf{回送電流的電路必須以電流源驅動}才能套標準公式；若題目用電壓源加 $R_S$ 驅動，先轉成 Norton 等效（\exref{8.9}、\exref{8.16}）。
+  \item \textbf{算迴路增益時要沿正確方向繞}：注入點後面接的是迴路的下一級，不是上一級；反方向繞得到的數字沒有意義（p.332 腳註）。
+  \item \textbf{電流—電壓回授的輸出阻抗}要在輸出電流路徑上\textbf{斷開}，量兩個斷點之間的阻抗（\exref{8.14}），不是從輸出節點對地看。
+\end{enumerate}
+\end{trapbox}
+
+% =====================================================================
+\section{回授不會改善雜訊}
+
+若開迴路放大器 $A_1$ 只有輸入參考雜訊 $V_n$、回授網路無雜訊：$(V_{in}-\beta V_{out}+V_n)A_1=V_{out}$，
+\[
+  V_{out}=(V_{in}+V_n)\frac{A_1}{1+\beta A_1} \tag{8.54}
+\]
+\rfig{43}{0.62}{包住有雜訊電路的回授（p.298）}
+所以閉迴路的輸入參考雜訊仍是 $V_n$。這個結論可推廣到四種拓撲（輸入參考雜訊電壓與電流都不變）；實際上回授網路本身含電阻或電晶體，還會讓雜訊變差。
+
+\textbf{例外：輸出與感測點不同。}Fig.~8.44 中輸出取在 $M_1$ 汲極，但回授感測的是源極。若 $\lambda=\gamma=0$，閉迴路增益為 $-A_1g_mR_D/[1+(1+A_1)g_mR_S]$，只考慮 $R_D$ 的雜訊：
+\begin{align}
+  |V_{n,in,closed}|=\frac{|V_{n,RD}|}{A_1R_D}\Big[\frac{1}{g_m}+(1+A_1)R_S\Big],\qquad
+  |V_{n,in,open}|=\frac{|V_{n,RD}|}{A_1R_D}\Big[\frac{1}{g_m}+R_S\Big] \tag{8.55, 8.56}
+\end{align}
+\rfig{44}{0.28}{回授感測源極電壓的電路（p.299）}
+$A_1\to\infty$ 時 $|V_{n,in,closed}|\to|V_{n,RD}|R_S/R_D$，而 $|V_{n,in,open}|\to0$：此時閉迴路反而比開迴路差。（閉迴路增益式已用 Python 數值驗算。）
+
+% =====================================================================
+\section{回授分析的五個難題與三種方法}
+
+前面的流程是：(a) 斷開迴路求開迴路增益與阻抗；(b) 求迴路增益 $\beta A_0$，再推閉迴路量；(c) 用迴路增益研究穩定度等。實際電路會遇到五個困難（Table 8.1）：
+\begin{enumerate}
+  \item \textbf{Loading（負載效應）}：回授網路的輸入阻抗會加重前饋放大器的輸出負載（Fig.~8.45(b)(c) 的 $R_1+R_2$、$R_F$）；回授網路的輸出阻抗不夠小時，會退化輸入電晶體（Fig.~8.45(d) 的 $M_1$ 源極），稱為輸入負載。
+  \item \textbf{分解不明確}：Fig.~8.47 中 $R_{D2}$ 屬於前饋放大器還是回授網路，選擇有任意性。
+  \item \textbf{非標準拓撲}：源極退化 CS 級含有回授（$R_S$ 量 $I_D$、轉成電壓、從輸入扣掉），但感測量 $I_{D1}$ 與輸出量 $V_{out}$ 不同，對不上四種拓撲（Fig.~8.48）。
+  \item \textbf{非單向迴路}：信號可經其他路徑由輸出流回輸入（例如經 $C_{GD2}$）。
+  \item \textbf{多重回授機制}：Fig.~8.49 中 $R_F$ 提供整體回授，$C_{GS2}$ 包住 $M_2$，source follower 本身又有退化；此時「迴路增益」指哪一個？
+\end{enumerate}
+\rfig{45}{0.5}{(a) 非反相放大器；(b) 差動對實現；(c) CS 級實現；(d) 兩級實現（p.300）}
+\rfig{48}{0.55}{(a) CS 級與 (b) 方塊圖：感測量 $I_{D1}$ 與輸出 $V_{out}$ 不同（p.301）}
+
+\exhead{8.11}{300}{在 $M_2$ 閘極斷開可以避開負載問題嗎？}
+在 Fig.~8.45(d) 中於 $M_2$ 閘極斷開（Fig.~8.46），可以得到迴路增益又不必處理負載。但我們同時需要開迴路增益與開迴路輸入、輸出阻抗，這個組態給不出來。所以必須發展一套能把負載效應納入的開迴路建構方法（第 \ref{sec:loading} 節）。
+
+\textbf{三種分析方法}（Table 8.2）：
+
+\noindent\begin{tabularx}{\linewidth}{>{\raggedright}p{2.6cm}>{\raggedright}X>{\raggedright\arraybackslash}X}
+\toprule
+方法 & 能做什麼 & 限制 \\\midrule
+Two-port 法 & 算開迴路量、閉迴路量與迴路增益，含負載效應；可遞迴用於多重回授 & 忽略經回授網路的前饋；不適用非標準拓撲 \\
+Bode 法 & 不斷迴路直接算精確閉迴路量；適用任何拓撲 & 只有單一回授機制時才給得出迴路增益 \\
+Middlebrook 法 & 不斷迴路算精確閉迴路量；適用任何拓撲；顯示非單向迴路的反向迴路增益影響 & 局部與整體迴路要可區分才給得出迴路增益 \\
+\bottomrule
+\end{tabularx}
+
+% =====================================================================
+\section{負載效應：用 two-port 模型正確斷開迴路}\label{sec:loading}
+
+\subsection{四種 two-port 模型}
+\begin{align*}
+  Z:&\ V_1=Z_{11}I_1+Z_{12}I_2,\ V_2=Z_{21}I_1+Z_{22}I_2 &
+  Y:&\ I_1=Y_{11}V_1+Y_{12}V_2,\ I_2=Y_{21}V_1+Y_{22}V_2\\
+  H:&\ V_1=H_{11}I_1+H_{12}V_2,\ I_2=H_{21}I_1+H_{22}V_2 &
+  G:&\ I_1=G_{11}V_1+G_{12}I_2,\ V_2=G_{21}V_1+G_{22}I_2
+\end{align*}
+每個參數都在「另一埠開路（$I=0$）或短路（$V=0$）」下求得，例如 $Y_{11}=I_1/V_1|_{V_2=0}$、$Z_{11}=V_1/I_1|_{I_2=0}$。所以 $Y_{11}$ 一般\textbf{不等於} $1/Z_{11}$。Z 與 H 模型的輸出受控源由\textbf{輸入電流}控制，對閘極輸入的 MOS 電路（忽略輸入電容時輸入電流為零）沒有意義。G 模型最接近直觀的電壓放大器：忽略 $G_{12}I_2$ 後，$G_{11}$ 是輸入阻抗的倒數、$G_{22}$ 是輸出阻抗。
+
+\subsection{電壓—電壓回授的負載}
+\rfig{52}{0.5}{電壓—電壓回授中正確納入負載的方法（p.306）}
+
+\begin{derivationbox}[完整推導與計算步驟：G 模型下的負載與開迴路增益]
+前饋放大器與回授網路都用 G 模型（大寫為放大器、小寫為回授網路），忽略放大器內部回授 $G_{12}V_{out}$ 與輸入經回授網路的前饋 $g_{12}I_{in}$（把迴路「單向化」）。
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{輸入端 KVL 與輸出節點 KCL}（$g_{11}$ 為導納、$g_{22}$ 為阻抗）：
+  \[
+    V_{in}=V_e+g_{22}\frac{V_e}{Z_{in}}+g_{21}V_{out},\qquad
+    g_{11}V_{out}+\frac{V_{out}-A_0V_e}{Z_{out}}=0 \tag{8.65, 8.66}
+  \]
+  \item \textbf{消去 $V_e$}：
+  \[
+    \frac{V_{out}}{V_{in}}=\frac{A_0}{\big(1+\frac{g_{22}}{Z_{in}}\big)(1+g_{11}Z_{out})+g_{21}A_0} \tag{8.67}
+  \]
+  \item \textbf{寫成 $A/(1+\beta A)$ 的形式}：上下同除 $(1+g_{22}/Z_{in})(1+g_{11}Z_{out})$，
+  \[
+    \boxed{A_{v,open}=\frac{A_0}{\big(1+\frac{g_{22}}{Z_{in}}\big)(1+g_{11}Z_{out})},\qquad \beta=g_{21}} \tag{8.69, 8.70}
+  \]
+  \item \textbf{解讀}：$1/(1+g_{22}/Z_{in})=Z_{in}/(Z_{in}+g_{22})$ 是輸入端的分壓；$1/(1+g_{11}Z_{out})=g_{11}^{-1}/(g_{11}^{-1}+Z_{out})$ 是輸出端的分壓。
+  \item \textbf{兩個負載怎麼求}：
+  \begin{itemize}[label=\textperiodcentered,leftmargin=1.5em]
+    \item $g_{11}=I_1/V_1|_{I_2=0}$：回授網路\textbf{輸出端開路}，從感測端看進去，接在放大器輸出（並聯）。
+    \item $g_{22}=V_2/I_2|_{V_1=0}$：回授網路\textbf{感測端短路}，從回送端看進去，串在放大器輸入。
+  \end{itemize}
+  \item \textbf{迴路增益} $=g_{21}A_{v,open}$，不必另算；開迴路輸入、輸出阻抗（由 Fig.~8.52 求）乘或除 $1+g_{21}A_{v,open}$ 即得閉迴路值。
+\end{enumerate}
+\end{derivationbox}
+
+\rfig{53}{0.42}{電壓—電壓回授正確斷開迴路的概念圖（p.306）}
+為什麼不直接解閉迴路電路？因為 Fig.~8.52 的規則讓我們快速看出：回授網路的有限輸入、輸出阻抗分別降低了輸出電壓與主放大器看到的輸入電壓。
+
+\exhead{8.12}{307}{兩級電壓—電壓回授放大器（新電路）}
+\rfig{54}{0.62}{(a) 兩級回授放大器；(b) 含負載的開迴路電路（p.307）}
+$R_F$、$R_S$ 感測輸出電壓，送一部分回 $M_1$ 源極，由 $M_1$ 做減法。依 Fig.~8.53：輸入端負載是\textbf{把 $R_F$ 右端接地}（感測端短路），即 $M_1$ 被 $R_F\pll R_S$ 退化；輸出端負載是\textbf{讓 $R_F$ 左端開路}，即輸出接 $R_F+R_S$ 到地。忽略 $\lambda$ 與 body effect：
+\begin{align}
+  A_{v,open}=\frac{V_Y}{V_{in}}=\frac{-R_{D1}}{R_F\pll R_S+1/g_{m1}}\cdot\big\{-g_{m2}[R_{D2}\pll(R_F+R_S)]\big\} \tag{8.73}
+\end{align}
+$g_{21}=V_2/V_1|_{I_2=0}=R_S/(R_F+R_S)$，閉迴路增益 $A_{v,closed}=A_{v,open}/(1+g_{21}A_{v,open})$。
+
+也可以把 $R_{D2}$ 歸入回授網路（給 $M_2$ 有限 $r_O$），結果略有不同（分解的任意性）。這個分析忽略了 $C_{GD2}$ 的內部回授，以及輸入信號由 $M_1$ 源極經 $R_F$ 直達輸出的前饋（$M_1$ 此時也像 source follower）。
+
+\exhead{8.13}{307}{用 H 模型求精確解，看清近似條件}
+\rfig{55}{0.5}{前饋放大器以 H 模型表示（p.308）}
+H 模型讓輸入端是電壓與阻抗的串聯、輸出端是並聯，接法很自然。KVL 與 KCL：
+\begin{align}
+  V_{in}&=I_{in}H_{11}+H_{12}V_{out}+I_{in}g_{22}+g_{21}V_{out}\\
+  0&=H_{22}V_{out}+H_{21}I_{in}+g_{11}V_{out}+g_{12}I_{in}
+\end{align}
+由第二式解 $I_{in}$ 代入第一式：
+\[
+  A_{v,open}=-\frac{H_{21}+g_{12}}{(H_{22}+g_{11})(H_{11}+g_{22})},\qquad \beta=H_{12}+g_{21} \tag{8.77, 8.78}
+\]
+若 $g_{12}\ll H_{21}$ 且 $H_{12}\ll g_{21}$，就回到 $A_{v,open}=-H_{21}/[(H_{22}+g_{11})(H_{11}+g_{22})]$、$\beta=g_{21}$，衰減因子的解讀與 (8.69) 相同。這個做法把近似條件明白寫出來，但對 MOS 閘極輸入，電流增益 $H_{21}\to\infty$，模型難用。
+
+\subsection{電流—電壓回授的負載}
+前饋放大器用 Y 模型、回授網路用 Z 模型，忽略 $Y_{12}V_{out}$、$z_{12}I_{in}$。由兩條 KVL（$V_{in}=V_e+Y_{11}V_ez_{22}+z_{21}I_{out}$、$-I_{out}z_{11}=(I_{out}-Y_{21}V_e)/Y_{22}$）：
+\[
+  G_{m,open}=\frac{Y_{21}}{(1+z_{22}Y_{11})(1+z_{11}Y_{22})},\qquad\beta=z_{21} \tag{8.84, 8.85}
+\]
+$Y_{21}$ 就是原放大器的 $G_m$；兩個衰減因子分別是輸入端分壓與輸出端分流。$z_{22}=V_2/I_2|_{I_1=0}$（\textbf{感測端開路}，串在輸入），$z_{11}=V_1/I_1|_{I_2=0}$（\textbf{回送端開路}，串在輸出）。迴路增益 $=z_{21}G_{m,open}$。
+
+\exhead{8.14}{310}{以回授穩定 PMOS 電流源（新電路）}
+\rfig{59}{0.65}{(a) PMOS 電流源；(b) 加回授；(c) 重畫；(d) 含負載的開迴路（p.310）}
+把 $V_b$ 視為輸入，小電阻 $r_M$ 把輸出電流轉成電壓，$A_1$ 與參考比較後回送到 $M_1$ 閘極。迴路增益高時 $r_M$ 上的電壓約等於 $V_b$，$I_{out}\approx V_b/r_M$。較精確地，$A_1$ 與 $M_1$ 為前饋 transconductance 放大器，$r_M$ 為回授網路：
+\[
+  G_{m,open}\approx A_1g_m,\qquad \beta=z_{21}=r_M,\qquad I_{out}=\frac{A_1g_m}{1+A_1g_mr_M}V_b \tag{8.87, 8.88}
+\]
+開迴路時負載看到 $r_O+r_M$，閉迴路升為 $Z_{out}=(1+A_1g_mr_M)(r_O+r_M)$。\textbf{關鍵}：電流—電壓回授的輸出阻抗，要在輸出電流路徑上斷開（Fig.~8.59(b) 的 X、Y 兩點之間）量測；所謂「負載看到的阻抗」，是把負載換成電壓源、量流過它的電流。
+
+\subsection{電壓—電流回授的負載}
+前饋 transimpedance 放大器用 Z 模型、回授網路用 Y 模型，忽略 $Z_{12}$、$y_{12}$：
+\[
+  R_{0,open}=\frac{Z_{21}}{(1+y_{22}Z_{11})(1+y_{11}Z_{22})},\qquad\beta=y_{21} \tag{8.92, 8.93}
+\]
+衰減因子為輸入端分流與輸出端分壓。$y_{22}=I_2/V_2|_{V_1=0}$（\textbf{感測端短路}，並在輸入），$y_{11}=I_1/V_1|_{V_2=0}$（\textbf{回送端短路}，並在輸出）。迴路增益 $=y_{21}R_{0,open}$。
+
+\exhead{8.15}{311}{光通訊常用的 TIA（重要新電路）}
+\rfig{62}{0.62}{(a) TIA；(b) 含負載的開迴路電路（p.312）}
+$R_F$ 感測輸出電壓、轉成電流送回輸入。依 Fig.~8.61，輸入端與輸出端各並一個 $R_F$：
+\[
+  R_{0,open}=-R_Fg_m(R_F\pll R_D),\qquad y_{21}=-\frac{1}{R_F} \tag{8.94}
+\]
+\begin{align}
+  \frac{V_{out}}{I_{in}}&=\frac{-R_Fg_m(R_F\pll R_D)}{1+g_m(R_F\pll R_D)}\xrightarrow{g_m(R_F\pll R_D)\gg1}-R_F \tag{8.95}\\
+  R_{in}&=\frac{R_F}{1+g_m(R_F\pll R_D)},\qquad R_{out}=\frac{R_F\pll R_D}{1+g_m(R_F\pll R_D)} \tag{8.96, 8.97}
+\end{align}
+$R_{in}\approx(1+R_F/R_D)/g_m$、$R_{out}\approx1/g_m$。增益趨近 $-R_F$ 的原因：迴路增益大時輸入節點是 virtual ground，$I_{in}$ 全部流過 $R_F$。若 $\lambda>0$，把 $R_D$ 換成 $R_D\pll r_O$ 即可。
+
+課本指出兩個不一致：(1) 在 $M_1$ 閘極斷開，迴路增益是 $g_mR_D$ 而不是 $g_m(R_D\pll R_F)$；(2) $I_{in}=0$ 時真正的輸出阻抗是 $R_D\pll(1/g_m)=R_D/(1+g_mR_D)$，上式則等於 $R_D/(1+g_mR_D+R_D/R_F)$，多了 $R_D/R_F$。這些誤差來自模型的近似。\textbf{（補充，直接解並以 Python 驗算）}精確解為 $V_{out}/I_{in}=-(g_mR_F-1)R_D/(1+g_mR_D)$、$R_{in}=(R_F+R_D)/(1+g_mR_D)$；與 two-port 結果的差距通常不到 0.1\%。
+
+\exhead{8.16}{312}{電壓源驅動的電阻回授 CS 級：先轉 Norton}
+\rfig{63}{0.62}{(a) 電路；(b) Norton 等效；(c) 開迴路（p.313）}
+$R_F$ 感測輸出電壓、回送電流到 X，屬電壓—電流回授，但輸入是電壓。把 $V_{in}$、$R_S$ 換成 Norton 等效 $I_N=V_{in}/R_S$ 並聯 $R_S$，$R_S$ 視為主放大器的輸入電阻。依 Fig.~8.61 斷開：
+\begin{align}
+  R_{0,open}=\frac{V_{out}}{I_N}\Big|_{open}=-(R_S\pll R_F)g_m(R_F\pll R_D) \tag{8.99}
+\end{align}
+迴路增益 $y_{21}R_{0,open}=g_m(R_F\pll R_D)R_S/(R_S+R_F)$，所以
+\[
+  \frac{V_{out}}{V_{in}}=\frac{1}{R_S}\cdot\frac{-(R_S\pll R_F)g_m(R_F\pll R_D)}{1+g_m(R_F\pll R_D)R_S/(R_S+R_F)} \tag{8.100}
+\]
+若把 $R_F$ 換成電容，這個分析得不到轉移函數的零點，因為忽略了回授網路的反向傳輸（由回授網路輸出端到其輸入端）。同一電路的精確解見 \exref{8.21}。
+
+\subsection{電流—電流回授的負載}
+前饋放大器與回授網路都用 H 模型，忽略 $H_{12}$、$h_{12}$：
+\[
+  A_{I,open}=\frac{H_{21}}{(1+h_{22}H_{11})(1+h_{11}H_{22})},\qquad\beta=h_{21} \tag{8.104, 8.105}
+\]
+$h_{22}=I_2/V_2|_{I_1=0}$（\textbf{感測端開路}，並在輸入），$h_{11}=V_1/I_1|_{V_2=0}$（\textbf{回送端短路}，串在輸出）。迴路增益 $=h_{21}A_{I,open}$。
+
+\exhead{8.17}{314}{兩級電流—電流回授}
+\rfig{66}{0.55}{(a) 電流—電流回授電路；(b) 含負載的開迴路（p.314）}
+$R_S$、$R_F$ 感測輸出電流，送一部分回輸入。依 Fig.~8.65 斷開：輸入節點看到 $R_F+R_S$ 到地（感測端開路），$M_2$ 源極看到 $R_S\pll R_F$（回送端短路）：
+\[
+  A_{I,open}=-(R_F+R_S)g_{m1}R_D\cdot\frac{1}{R_S\pll R_F+1/g_{m2}},\qquad h_{21}=\frac{I_2}{I_1}\Big|_{V_2=0}=-\frac{R_S}{R_S+R_F} \tag{8.106}
+\]
+閉迴路增益 $A_{I,open}/(1+h_{21}A_{I,open})$；兩者都是負號，乘積為正，確認是負回授。
+
+\subsection{負載效應總整理}
+\rfig{67}{0.62}{四種拓撲斷開迴路的總整理（p.315）}
+三步驟：(1) 含負載斷開迴路，算 $A_{OL}$ 與開迴路輸入、輸出阻抗；(2) 求 $\beta$ 與迴路增益 $\beta A_{OL}$；(3) 閉迴路增益與阻抗為開迴路值乘或除 $1+\beta A_{OL}$。下標 1、2 分別指回授網路的輸入埠（感測端）與輸出埠（回送端）。
+
+{\renewcommand{\arraystretch}{2.3}
+\begin{tabularx}{\linewidth}{>{\raggedright}p{2.2cm}>{\raggedright}p{2.2cm}>{\raggedright}X>{\raggedright\arraybackslash}X}
+\toprule
+拓撲 & $\beta$ & 輸入端負載（回授網路輸出埠） & 輸出端負載（回授網路輸入埠） \\\midrule
+電壓－電壓 & $\dfrac{V_2}{V_1}\Big|_{I_2=0}$ & 感測端\textbf{短路}，串在輸入 & 回送端\textbf{開路}，並在輸出 \\
+電流－電壓 & $\dfrac{V_2}{I_1}\Big|_{I_2=0}$ & 感測端\textbf{開路}，串在輸入 & 回送端\textbf{開路}，串在輸出 \\
+電壓－電流 & $\dfrac{I_2}{V_1}\Big|_{V_2=0}$ & 感測端\textbf{短路}，並在輸入 & 回送端\textbf{短路}，並在輸出 \\
+電流－電流 & $\dfrac{I_2}{I_1}\Big|_{V_2=0}$ & 感測端\textbf{開路}，並在輸入 & 回送端\textbf{短路}，串在輸出 \\
+\bottomrule
+\end{tabularx}}
+
+\textbf{口訣（本講義歸納）}：算某一端的負載時，回授網路\textbf{另一端}若是\textbf{並聯接法就短路、串聯接法就開路}，也就是讓那一端的回授信號消失。例如電壓—電壓：感測端與輸出並聯→短路；回送端與輸入串聯→開路。本章介紹了兩種求迴路增益的方法：任意處斷開（Fig.~8.5）與 $\beta\cdot A_{OL}$（Fig.~8.67），兩者可能因 Table 8.1 的問題而略有不同。
+
+% =====================================================================
+\section{Bode 分析：不斷開迴路，求精確閉迴路增益}\label{sec:bode}
+
+\subsection{兩個觀察與 $A$–$D$ 係數}
+把一顆電晶體畫成理想受控源 $I_1$，先\textbf{不}代入 $I_1=g_mV_1$。由線性關係，輸出與控制電壓都可寫成 $V_{in}$ 與 $I_1$ 的線性組合：
+\[
+  V_{out}=AV_{in}+BI_1,\qquad V_1=CV_{in}+DI_1 \tag{8.107, 8.110}
+\]
+\rfig{69}{0.75}{計算 (a) $A$、(b) $B$、(c) $C$、(d) $D$ 的設定（p.317）}
+\begin{itemize}
+  \item $A=V_{out}/V_{in}|_{I_1=0}$、$C=V_1/V_{in}|_{I_1=0}$：讓電晶體失效（$g_m=0$），求輸入到輸出、到 $V_1$ 的直通（feedthrough）。
+  \item $B=V_{out}/I_1|_{V_{in}=0}$、$D=V_1/I_1|_{V_{in}=0}$：輸入設零，把 $I_1$ 當獨立源，求到輸出與到 $V_1$ 的轉移。（若 $I_1$ 仍是受控源，電路沒有外加激勵，什麼都不會產生。）
+\end{itemize}
+以 Fig.~8.68(b) 的退化 CS 級（含 $r_O$）為例：$g_m=0$ 時 $R_S$、$r_O$、$R_D$ 沒有電流，$A=0$、$C=1$；$V_{in}=0$ 時，
+\[
+  B=-\frac{r_OR_D}{R_D+r_O+R_S},\qquad D=-\frac{r_OR_S}{R_D+r_O+R_S} \tag{8.116, 8.120}
+\]
+
+\begin{derivationbox}[完整推導與計算步驟：Bode 公式、return ratio 與 Blackman 定理]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{代入 $I_1=g_mV_1$}：由 $V_1=CV_{in}+Dg_mV_1$ 得 $V_1=\dfrac{C}{1-g_mD}V_{in}$，代入 $V_{out}$：
+  \[
+    \boxed{\frac{V_{out}}{V_{in}}=A+\frac{g_mBC}{1-g_mD}=\frac{A+g_m(BC-AD)}{1-g_mD}} \tag{8.140, 8.141}
+  \]
+  第一項是 $g_m=0$ 時的直通。$A=0$ 時形式同 $A_0/(1+\beta A_0)$，可把 $g_mBC$ 粗略視為「開迴路增益」。
+  \item \textbf{Return ratio}：比較 $1-g_mD$ 與 $1+$迴路增益，定義 $\text{RR}=-g_mD$。兩者都是「主輸入歸零、把受控源換成獨立源、求回來的控制量」，所以\textbf{電路只有一個回授機制、且迴路經過該電晶體時，RR 就是迴路增益}。
+  \item \textbf{Blackman 定理}：要求 P、Q 兩點間阻抗，把注入電流 $I_{in}$ 當輸入、埠電壓 $V_{in}$ 當輸出：$V_{in}=AI_{in}+BI_1$、$V_1=CI_{in}+DI_1$，於是 $Z_{in}=A+\dfrac{g_mBC}{1-g_mD}$。
+  \begin{itemize}[label=\textperiodcentered,leftmargin=1.5em]
+    \item 埠開路（$I_{in}=0$）：$V_1/I_1=D$，$\Toc=-g_mD$。
+    \item 埠短路（$V_{in}=0$）：$I_{in}=-(B/A)I_1$，$V_1/I_1=(AD-BC)/A$，$\Tsc=-g_m(AD-BC)/A$。
+    \item 合併：$Z_{in}=\dfrac{A-g_mAD+g_mBC}{1-g_mD}=\dfrac{A[1-g_m(AD-BC)/A]}{1-g_mD}$，即
+    \[
+      \boxed{Z_{in}=A\,\frac{1+\Tsc}{1+\Toc}} \tag{8.174}
+    \]
+  \end{itemize}
+  \item \textbf{前提}：推導中除以 $A$、$B$、$D$，所以這些量為 $0$ 或 $\infty$ 時公式可能失效（\exref{8.22}、\exref{8.27}、\exref{8.28}）。
+\end{enumerate}
+\end{derivationbox}
+
+\rfig{70}{0.55}{$A$–$D$ 計算總整理（p.318）}
+
+\exhead{8.18}{319}{電阻回授 CS 級的 $A$–$D$ 係數}
+\rfig{71}{0.62}{(a) 電路；(b) $g_m=0$；(c) $V_{in}=0$ 並注入 $I_1$（p.319）}
+$g_m=0$ [Fig.~8.71(b)]：$V_{in}$ 經 $R_S$、$R_F$、$R_D$ 分壓，
+\[
+  A=\frac{R_D}{R_D+R_S+R_F},\qquad C=\frac{R_F+R_D}{R_D+R_S+R_F} \tag{8.122, 8.124}
+\]
+$V_{in}=0$ [Fig.~8.71(c)]：$I_1$ 看到 $R_D\pll(R_S+R_F)$，$V_1$ 是 $V_{out}$ 經 $R_F$、$R_S$ 分壓：
+\[
+  B=-\frac{R_D(R_S+R_F)}{R_D+R_S+R_F},\qquad D=\frac{R_S}{R_S+R_F}\cdot\frac{V_{out}}{I_1}=-\frac{R_SR_D}{R_D+R_S+R_F} \tag{8.127, 8.130}
+\]
+
+\exhead{8.19}{320}{精確迴路增益，以及它與 $D$ 的關係}
+\rfig{72}{0.55}{(a) 在 $M_1$ 閘極斷開；(b) 在受控電流源處斷開（p.320）}
+在不會引起負載問題的 $M_1$ 閘極斷開，注入 $V_t$：
+\[
+  \text{Loop Gain}=-\frac{V_F}{V_t}=g_m[R_D\pll(R_S+R_F)]\frac{R_S}{R_S+R_F}=\frac{g_mR_SR_D}{R_D+R_S+R_F} \tag{8.133}
+\]
+也可以在受控電流源上端抽出測試電流 $I_t$，量回來的 $V_F$，再乘 $g_m$：$-g_mV_F/I_t$ 得同樣結果。迴路增益與 $D$ 只差 $-g_m$ 倍，這正是 return ratio 的由來。
+
+\exhead{8.20}{321}{用 Bode 法求退化 CS 級增益}
+$A=0$、$C=1$，代入 (8.140)：
+\[
+  \frac{V_{out}}{V_{in}}=\frac{g_m\cdot\frac{-r_OR_D}{R_D+r_O+R_S}}{1+g_m\frac{r_OR_S}{R_D+r_O+R_S}}=\frac{-g_mr_OR_D}{R_D+r_O+(1+g_mr_O)R_S} \tag{8.143}
+\]
+
+\exhead{8.21}{321}{不斷迴路求電阻回授 CS 級增益（精確）}
+用 \exref{8.18} 的係數：
+\begin{align}
+  \frac{V_{out}}{V_{in}}=\frac{R_D}{R_D+R_S+R_F}+\frac{-g_mR_D(R_S+R_F)(R_F+R_D)}{(R_D+R_S+R_F+g_mR_SR_D)(R_D+R_S+R_F)} \tag{8.145}
+\end{align}
+這是\textbf{精確解}（已用 Python 對直接節點分析驗算），第一項為 $g_m=0$ 時的直通。何時化簡為 $-R_F/R_S$？只要求 $R_D\ll R_F$（不感受 $R_F$ 的負載）還不夠，理想值也要求開迴路增益很大，所以需要\textbf{兩個條件}：$R_D\ll R_F$ 且 $g_mR_D\gg1$。
+
+\exhead{8.22}{322}{Source follower 的 Bode 分析}
+\rfig{73}{0.42}{(a) source follower；(b) 小信號模型（p.322）}
+$g_m=0$：$A=0$、$C=1$。$V_{in}=0$、以 $I_1$ 取代 $g_mV_1$：$B=R_S$、$D=-R_S$。
+\[
+  \frac{V_{out}}{V_{in}}=\frac{g_mR_S}{1+g_mR_S},\qquad \text{RR}=-g_mD=g_mR_S \tag{8.150}
+\]
+\textbf{怪異之處}：$R_S$ 換成理想電流源時，RR 與 $B$ 都趨近無窮大；(8.140) 的推導有除以 $B$、$D$，一般而言此時可能出錯，但 source follower 碰巧仍給出正確結果。
+
+\exhead{8.23}{323}{電晶體在迴路之外：RR 為零}
+\rfig{74}{0.3}{$M_1$ 位於回授迴路之外（p.323）}
+以 $M_1$ 為關注元件，$g_{m1}=0$：$A=0$，$C=V_1/V_{in}=g_{m2}R_S/(1+g_{m2}R_S)$。$V_{in}=0$ 注入 $I_1$：$B=-R_D$，$D=0$（RR 為零，正如預期）。
+\[
+  \frac{V_{out}}{V_{in}}=g_{m1}(-R_D)\frac{g_{m2}R_S}{1+g_{m2}R_S} \tag{8.155}
+\]
+若改以 $M_2$ 為關注元件，其 RR 與 \exref{8.22} 相同。電路只有一個回授機制，但兩個 RR 不同，因為迴路沒有經過 $M_1$。
+
+\exhead{8.24}{323}{以電流驅動的回授電路（transimpedance）}
+\rfig{75}{0.45}{(a) 電路；(b) 以獨立源取代 $M_1$（p.324）}
+選 $M_1$。$g_{m1}=0$ 時 $I_{in}$ 只流過 $R_S$：$A=R_S$；$V_1=I_{in}R_S(-g_{m2}R_D)-I_{in}R_S$，$C=-(1+g_{m2}R_D)R_S$。$I_{in}=0$ 注入 $I_1$：$V_{out}=I_1R_S$，$B=R_S$；$D=-R_S(1+g_{m2}R_D)$。
+\begin{align}
+  \frac{V_{out}}{I_{in}}=R_S-\frac{g_{m1}(1+g_{m2}R_D)R_S^2}{1+g_{m1}R_S(1+g_{m2}R_D)}=\frac{R_S}{1+g_{m1}R_S(1+g_{m2}R_D)} \tag{8.166}
+\end{align}
+（已用 Python 對直接節點分析驗算。）
+
+% =====================================================================
+\section{Blackman 阻抗定理：$Z=A\,(1+\Tsc)/(1+\Toc)$}\label{sec:blackman}
+
+\rfig{76}{0.62}{(a) 計算埠阻抗的設定；(b) $\Toc$；(c) $\Tsc$（p.325）}
+推導見第 \ref{sec:bode} 節的推導框。$A$ 是\textbf{電晶體失效時}的埠阻抗，可粗略視為「開迴路阻抗」。直觀：
+\begin{itemize}
+  \item $|\Tsc|\ll1$ 時 $Z\approx A/(1+\Toc)$：開迴路阻抗被除（埠開路時迴路仍有作用）。
+  \item $|\Toc|\ll1$ 時 $Z\approx A(1+\Tsc)$：開迴路阻抗被乘（埠短路時迴路仍有作用）。
+\end{itemize}
+這呼應前面「乘或除 $1+$迴路增益」的結果，但也顯示一般情況下閉迴路阻抗\textbf{不能}只寫成開迴路阻抗乘或除 $1+$迴路增益。
+
+\exhead{8.25}{326}{退化 CS 級的輸出阻抗}
+\rfig{77}{0.55}{(a) 退化 CS 級；(b) 埠開路；(c) 埠短路（p.326）}
+$\gamma=0$。電晶體失效：$A=r_O+R_S$。埠開路：$R_S$ 無電流，$\Toc=0$。埠短路：$I_1$ 流過 $R_S\pll r_O$，$V_1=-I_1(R_S\pll r_O)$，$\Tsc=g_m(R_S\pll r_O)$。
+\[
+  Z_{out}=(r_O+R_S)[1+g_m(R_S\pll r_O)]=(1+g_mr_O)R_S+r_O \tag{8.181}
+\]
+
+\exhead{8.26}{327}{輔助放大器提升的輸出阻抗（gain boosting）}
+\rfig{78}{0.6}{(a) 電路；(b) 埠開路；(c) 埠短路（p.327）}
+$A_1$ 感測源極電壓、輸出取在汲極，對不上四種標準拓撲，但 Blackman 定理不受影響。$A=r_O+R_S$；埠開路時 $R_S$ 無電流，$\Toc=0$；埠短路時 $\Tsc=g_m(R_S\pll r_O)A_1$：
+\[
+  Z_{out}=(r_O+R_S)[1+g_m(R_S\pll r_O)A_1]=r_O+R_S+g_mr_OR_SA_1\approx(1+g_mr_O)A_1R_S+r_O \tag{8.184--8.186}
+\]
+一階而言，$1+g_mr_O$ 再被放大 $A_1$ 倍。\textbf{（本講義驗算註記）}$A_1$ 輸出接閘極、反相端接源極時 $V_{GS}=-(1+A_1)V_S$，精確的 $\Tsc=g_m(R_S\pll r_O)(1+A_1)$，結果為 $r_O+R_S+g_mr_OR_S(1+A_1)$；課本取 $A_1\gg1$ 的近似。
+
+\exhead{8.27}{327}{Source follower 輸出阻抗：$A=\infty$ 的困境}
+\rfig{79}{0.4}{(a) source follower；(b)、(c) 計算兩個迴路增益（p.327）}
+$g_m=0$ 時輸出阻抗 $A=\infty$，且 $\Tsc=0$、$\Toc=\infty$，因為推導中除以 $A$，默認 $A<\infty$。解法：在埠上並聯電阻 $R_T$，最後令 $R_T\to\infty$。\textbf{（補完課本留給讀者的練習）}此時 $A=R_T$；埠開路時 $I_1$ 全部流入 $R_T$，$V_1=-I_1R_T$，$\Toc=g_mR_T$；埠短路時源極接地，$V_1=0$，$\Tsc=0$：
+\[
+  Z_{out}=\frac{R_T}{1+g_mR_T}\xrightarrow{R_T\to\infty}\frac{1}{g_m}
+\]
+
+\exhead{8.28}{328}{Blackman 定理失效：兩個理想電流源串聯}
+\rfig{80}{0.22}{求 $\Toc$ 時 $I_1$ 與 $M_1$ 串聯（p.328）}
+求 Fig.~8.37(a) 的輸入阻抗（$\lambda=\gamma=0$）。令 $g_{m2}=0$ 得 $A=\infty$，已使推導失效。再求 $\Toc$：注入獨立源 $I_1$，$M_1$ 閘極電壓 $=-I_1R_DC_1/(C_1+C_2)$，汲極電流 $=-g_{m1}I_1R_DC_1/(C_1+C_2)$，又必須等於 $I_1$：
+\[
+  \Big(1+g_{m1}R_D\frac{C_1}{C_1+C_2}\Big)I_1=0 \tag{8.187}
+\]
+不可能成立。這個荒謬結果來自兩個理想電流源（$I_1$ 與 $M_1$）串聯；$V_1$ 也無法定義，因為 $M_1$ 汲極電壓沒有定義。這是 Blackman 法的缺點。
+
+\exhead{8.29}{328}{加上 $R_T$ 拯救 Blackman 定理}
+\rfig{81}{0.28}{在 $M_1$ 汲極對地加 $R_T$（p.329）}
+$A=R_T$。在 $M_1$ 汲極寫 KCL：$-g_{m1}I_1R_D\frac{C_1}{C_1+C_2}-\frac{V_1}{R_T}=I_1$，所以
+\[
+  \Toc=-g_{m2}\frac{V_1}{I_1}=g_{m2}\Big(1+g_{m1}R_D\frac{C_1}{C_1+C_2}\Big)R_T \tag{8.189}
+\]
+$\Tsc=0$（埠短路後 $M_2$ 的控制電壓被固定）。
+\[
+  R_{in}=\frac{R_T}{1+g_{m2}\Big(1+g_{m1}R_D\frac{C_1}{C_1+C_2}\Big)R_T}\xrightarrow{R_T\to\infty}\frac{1}{g_{m2}}\cdot\frac{1}{1+g_{m1}R_D\frac{C_1}{C_1+C_2}} \tag{8.191}
+\]
+與 (8.48) 一致。$M_2$ 的 RR 不等於 $M_1$ 的，因為 $M_2$ 被 $R_T$ 退化而有局部回授；$R_T=\infty$ 時 $M_2$ 看到無限大退化，RR 無限大。
+
+\exhead{8.30}{329}{CG 級輸入阻抗（含 $r_O$）}
+\rfig{82}{0.4}{(a) CG 級；(b) 埠開路求 $\Toc$（p.329）}
+$\gamma=0$。$g_m=0$：$A=R_D+r_O$。輸入埠短路時沒有回授，$\Tsc=0$。輸入埠開路：$R_D$ 無電流，$I_1$ 在 $r_O$ 上產生 $-I_1r_O$，$V_1=-I_1r_O$，$\Toc=g_mr_O$：
+\[
+  R_{in}=\frac{R_D+r_O}{1+g_mr_O} \tag{8.192}
+\]
+\textbf{注意}：經 $r_O$ 的回授其實是正回授，$\Toc$ 卻大於零，因為電路有兩個回授機制（經 $r_O$，以及 $M_1$ 被無限大源極電阻退化）。此時 $\Toc$ 的正負號不能判斷回授極性。
+
+\exhead{8.31}{330}{兩顆電晶體的 return ratio 不相等}
+\rfig{83}{0.6}{(a) 電路；(b) $M_1$ 的 RR；(c) $M_2$ 的 RR（p.330）}
+$R_S$ 同時退化 $M_1$ 與 $M_2$，$M_2$ 以正回授把電壓送回 $M_1$ 源極。注入 $I_1$：$R_S$ 電流 $-V_1/R_S$，$I_{D2}=-I_1-V_1/R_S$，$V_{GS2}=I_{D2}/g_{m2}$；把 $R_D$、$R_S$ 壓降加上 $V_{GS2}$：
+\begin{align}
+  I_1R_D-\frac{I_1}{g_{m2}}-\frac{V_1}{g_{m2}R_S}-V_1=0\ \Rightarrow\
+  \text{RR}_1=-g_{m1}\frac{V_1}{I_1}=\frac{1-g_{m2}R_D}{1+g_{m2}R_S}g_{m1}R_S \tag{8.195}
+\end{align}
+同理 $I_{D1}=-I_2g_{m1}R_S/(1+g_{m1}R_S)$，得
+\[
+  \text{RR}_2=\frac{1-g_{m1}R_D}{1+g_{m1}R_S}g_{m2}R_S \tag{8.197}
+\]
+兩者不相等，且可以各自為正或負。（兩式皆已數值驗算。）
+
+% =====================================================================
+\section{Middlebrook 法：考慮反向傳輸的 dissection theorem}
+
+\rfig{84}{0.42}{Middlebrook 法的注入方式（p.331）}
+任何轉移函數都可分解為
+\[
+  H(s)=H_\infty\,\frac{1+1/T_2}{1+1/T_1} \tag{8.198}
+\]
+做法：在某條支路串入電壓源 $V_t$，並在 $V_t$ 一側注入電流 $I_t$，得到 $V_1$、$V_2$、$I_1$、$I_2$。迴路沒有被斷開，所以\textbf{負載效應不成問題}。理想轉移函數 $H_\infty=V_{out}/V_{in}|_{V_1=0,I_1=0}$。$T_1$ 在 $V_{in}=0$ 下由四個迴路增益組成（依課本式 8.200）：
+\[
+  \frac1{T_1}=\frac1{T_i}+\frac1{T_v}+\frac{1}{T_i'T_v'},\quad
+  T_i=\frac{I_1}{I_2}\Big|_{V_1=0},\ T_v=\frac{V_1}{V_2}\Big|_{I_1=0},\ \frac{1}{T_i'}=\frac{I_2}{I_1}\Big|_{V_2=0},\ \frac{1}{T_v'}=\frac{V_2}{V_1}\Big|_{I_2=0}
+\]
+前兩者為短路／開路\textbf{正向}迴路增益，後兩者為\textbf{反向}迴路增益。$T_2$ 的算法相同，但改為強迫 $V_{out}=0$。沒有反向傳輸時 $T_1=T_i\pll T_v\equiv T_{fwd}$；定義 $T_{rev}=(1/T_i')\pll(1/T_v')$，可改寫成
+\[
+  T_1=\frac{T_{fwd}}{1+T_{rev}} \tag{8.205}
+\]
+\textbf{觀察}：即使 $T_{rev}\ll T_{fwd}$，只要 $T_{rev}$ 接近 1，等效迴路增益就會下降。這個解讀需要 (a) 注入點使 $V_1$、$I_1$ 是「誤差」信號，(b) 注入點在主迴路內、所有次迴路之外；兩個條件都不明確（例如 $\lambda>0$ 的退化 CS 級就兩者都不滿足）。Middlebrook 法一般比 Bode 法更費工。
+
+% =====================================================================
+\section{迴路增益計算的陷阱}
+
+\subsection{在哪裡斷開、注入電壓還是電流}
+\rfig{85}{0.62}{(a) 兩級回授放大器；(b) 在 $R_1$ 左端斷開；(c) 在 $M_2$ 閘極斷開（p.333）}
+在 Fig.~8.85(b) 中於 $R_1$ 左端斷開：原電路中 $R_1$ 會從 $R_{D2}$ 抽交流電流，斷開後不會，第二級增益被改變了。改在 $M_2$ 閘極斷開 [(c)]，至少在低頻不改變第一級的負載。若要計入 $C_{GS2}$，就在 $C_{GS2}$ \textbf{之後}斷開，讓 $M_1$ 看到的負載不變。一定找得到閘極斷點嗎？可以：負回授迴路中至少要有一個閘極感測信號，因為只有 CS 組態會反相（例外是源極退化元件）。
+
+\rfig{87}{0.55}{(a) 在 $M_2$ 汲極斷開注入電流；(b) 以獨立源取代 $M_2$ 的受控源（p.334）}
+注入電流的做法：在 $M_2$ 汲極斷開注入 $I_t$ 量回來的 $I_F$ [(a)]，結果與 $V_F/V_t$ 相同；但汲極節點要接什麼？接交流地會失去閉迴路中的電壓擺動，計入 $r_{O2}$ 時有問題。較好的做法是把 $M_2$ 的受控電流源換成獨立源 $I_t$，量回來的 $V_{GS}$ 為 $V_F$，迴路增益 $=(-V_F/I_t)\times g_{m2}$ [(b)]，即使 $M_2$ 有退化也可行，這正是 $M_2$ 的 return ratio。
+
+\textbf{結論}：最佳斷點是 (a) MOSFET 的閘—源極（注入電壓），或 (b) MOSFET 的受控電流源（注入電流，量回來的 $V_{GS}$），兩者只差 $g_m$ 倍。若再計入 $C_{GD2}$，它會在 $M_2$ 汲極與閘極之間形成局部回授，迴路無法乾淨斷開。
+
+\subsection{Return ratio 的困難：多重回授時不唯一}
+\rfig{89}{0.55}{計算 (a) $M_1$、(b) $M_2$ 的 return ratio（p.335）}
+Fig.~8.85(a) 中 $R_1$、$R_2$ 同時提供整體回授與 $M_1$ 的局部退化：
+\begin{align}
+  \text{RR}|_{M_1}=\frac{g_{m1}R_2(R_1+R_{D2}+g_{m2}R_{D2}R_{D1})}{R_1+R_2+R_{D2}},\qquad
+  \text{RR}|_{M_2}=\frac{g_{m1}g_{m2}R_2R_{D1}R_{D2}}{(1+g_{m1}R_2)(R_1+R_{D2})+R_2} \tag{8.206, 8.207}
+\end{align}
+在 $M_2$ 閘極斷開得到的就是 $\text{RR}|_{M_2}$（已數值驗算）。兩者不同的原因：讓 $M_1$ 失效會同時移除兩種回授，讓 $M_2$ 失效則仍保留 $M_1$ 的退化。哪一個才是「迴路增益」並不明確。
+
+另一種方法是不斷開迴路、注入信號 $W$，由 $Y/W=1/(1+\beta A_0)$ 得 $\text{Loop Gain}=(Y/W)^{-1}-1$（式 8.208）。但它默認迴路是單向的；非單向時，不同注入點會得到不同結果（Fig.~8.91）。非單向或多迴路電路的精確迴路增益超出本書範圍。
+\rfig{91}{0.5}{非單向電路中不同的注入點（p.336）}
+
+% =====================================================================
+\section{Bode 的另兩種形式：asymptotic gain 與 double-null}
+
+\subsection{Asymptotic gain：理想增益 $\times\frac{T}{1+T}$ + 直通 $\times\frac{1}{1+T}$}
+由 $V_{out}/V_{in}=A+g_mBC/(1-g_mD)$：$g_m=0$ 時為 $H_0=A$（直通）；$g_m\to\infty$ 時為 $H_\infty=A-BC/D$（理想增益）。令 $T=-g_mD$：
+\begin{align}
+  \frac{V_{out}}{V_{in}}=H_0+\frac{g_mBC}{1+T}=\frac{H_0}{1+T}+\frac{T(H_0+g_mBC/T)}{1+T},\quad
+  H_0+\frac{g_mBC}{T}=A-\frac{BC}{D}=H_\infty
+\end{align}
+\[
+  \boxed{\frac{V_{out}}{V_{in}}=H_\infty\frac{T}{1+T}+H_0\frac{1}{1+T}} \tag{8.212}
+\]
+求 $H_\infty$ 的捷徑：$V_1=CV_{in}/(1-g_mD)\to0$（$g_m\to\infty$），即該電晶體的 $V_{GS}=0$，類似 virtual ground。
+
+\exhead{8.32}{336}{用 asymptotic gain 法求兩級放大器增益}
+\rfig{92}{0.62}{(a) 電路；(b) $g_{m1}=\infty$ 的等效；(c) $g_{m2}=\infty$ 的等效（p.337）}
+$\lambda=\gamma=0$。\textbf{以 $M_1$ 為關注元件}：
+\begin{itemize}
+  \item $g_{m1}=0$：$V_{in}$ 經 $R_1$、$R_2$，看到 $M_2$ 源極的 $(1/g_{m2})\pll R_S$：$H_0=\dfrac{(1/g_{m2})\pll R_S}{(1/g_{m2})\pll R_S+R_1+R_2}$。
+  \item $g_{m1}=\infty$：$V_{GS1}=0$，$R_1$、$R_2$ 流過 $V_{in}/R_1$：$H_\infty=-R_2/R_1$（$M_1$、$M_2$ 如同開迴路增益無限大的 op amp）。
+  \item RR：$V_X=-I_1R_D$，$M_2$ 負載 $R_S\pll(R_1+R_2)$，再經 $R_1/(R_1+R_2)$ 回到閘極：
+  \[
+    T_1=g_{m1}R_D\frac{g_{m2}[R_S\pll(R_1+R_2)]}{1+g_{m2}[R_S\pll(R_1+R_2)]}\cdot\frac{R_1}{R_1+R_2} \tag{8.215}
+  \]
+\end{itemize}
+\textbf{以 $M_2$ 為關注元件}：$g_{m2}=0$ 時 $H_0=R_S/(R_S+R_1+R_2)$；$g_{m2}=\infty$ 時 $V_X=V_{out}$，$M_2$ 是理想單位增益 buffer，$H_\infty=-g_{m1}R_2R_D/(R_1+R_2+g_{m1}R_1R_D)$；
+\[
+  T_2=\frac{g_{m2}R_S(g_{m1}R_1R_D+R_1+R_2)}{R_S+R_1+R_2} \tag{8.218}
+\]
+課本把代入 (8.212) 留給讀者。\textbf{（本講義驗算）}兩組 $(H_0,H_\infty,T)$ 代入後都與直接節點分析完全一致。課本也指出這種電路直接解反而比較簡單。
+
+\subsection{Double-null 法}
+仿照 Blackman，把轉移函數寫成
+\[
+  \frac{V_{out}}{V_{in}}=A\,\frac{1+T_{out,0}}{1+T_{in,0}} \tag{8.219}
+\]
+$A$ 為受控源設為零時的增益；$T_{in,0}=-g_mD$（$V_{in}=0$ 時的 RR）；$T_{out,0}=-g_m(AD-BC)/A$（選 $V_{in}$ 與 $I_1$ 使 $V_{out}=0$ 時的 RR）。$T_{out,0}\neq0$ 表示即使輸出被強迫為零，$I_1$ 仍經內部迴路控制 $V_1$。推導中除以 $A$，所以 $A=0$ 時失效。
+\rfig{93}{0.5}{$T_{in,0}$ 與 $T_{out,0}$ 的概念圖（p.338）}
+
+\exhead{8.33}{338}{回授網路不感測主輸出時的 double-null}
+\rfig{94}{0.55}{(a) 電路；(b) 求 $T_{out,0}$（p.339）}
+以 $M_1$ 為關注元件，$g_{m1}=0$：$M_2$ 源極電壓 $=V_{in}(R_S\pll g_{m2}^{-1})/(R_S\pll g_{m2}^{-1}+R_1+R_2)$，
+\[
+  A=g_{m2}R_{D2}\frac{R_S\pll g_{m2}^{-1}}{R_S\pll g_{m2}^{-1}+R_1+R_2} \tag{8.222}
+\]
+$T_{out,0}$：$V_{out}=0$ 使 $V_{GS2}=0$、$I_{D2}=0$，$M_2$ 源極電壓同時等於 $-I_1R_{D1}$ 與 $V_{in}R_S/(R_1+R_2+R_S)$；又 $V_1=V_{in}(R_2+R_S)/(R_1+R_2+R_S)$：
+\[
+  T_{out,0}=-g_{m1}\frac{V_1}{I_1}=g_{m1}R_{D1}\frac{R_2+R_S}{R_S} \tag{8.224}
+\]
+$T_{in,0}$ 即 $V_{in}=0$ 時的 RR（同 (8.215) 的結構）。\textbf{（本講義驗算）}$A(1+T_{out,0})/(1+T_{in,0})$ 與直接節點分析一致。若改以 $M_2$ 為關注元件，$g_{m2}=0$ 時 $V_{out}=0$，$A=0$，(8.219) 失效；這個缺點在 CMOS 電路中很常見，連簡單的退化 CS 級都會遇到。
+
+% =====================================================================
+\section{題型與章末習題解法}\label{sec:problems}
+
+專題資料夾的考古題沒有第 8 章，以下依本章內容歸納題型，並以章末習題示範（數值皆以 Python 驗算）。題號「習題 8.x」指章末 Problems，與「例 8.x」不同。
+
+\subsection{題型一：辨識拓撲並估計閉迴路增益與阻抗}
+\textbf{辨識特徵}：題目要求「用回授技巧求增益、輸入／輸出阻抗」（習題 8.10、8.11）。
+\begin{enumerate}
+  \item 找出感測點：輸出節點直接接分壓器→感測電壓；輸出電流路徑上的電阻→感測電流。
+  \item 找出相加點：輸入與回授在同一節點→電流；不同節點（閘極／源極）→電壓。
+  \item 輸入設零、在閘極斷開求迴路增益；開迴路量依第 \ref{sec:loading} 節口訣含負載求。
+  \item 閉迴路量 = 開迴路量乘或除 $1+$迴路增益（比較表）。
+\end{enumerate}
+
+\textbf{習題 8.1}（Fig.~8.3(b)，$I_1$ 理想、$g_{m1}r_{O1}\le50$，增益誤差 $<5\%$，求最大閉迴路增益與輸出阻抗）。令 $G=C_1/C_2$、$A=g_{m1}r_{O1}$，由 (8.3)，實際增益／理想增益 $=1/[1+(1+G)/A]$。誤差 $<5\%$：
+\[
+  \frac{(1+G)/A}{1+(1+G)/A}<0.05\ \Rightarrow\ 1+G<\frac{A}{19}=\frac{50}{19}\ \Rightarrow\ G<1.63
+\]
+最大閉迴路增益約 $|{-C_1/C_2}|\approx1.63$。此時迴路增益 $=g_{m1}r_{O1}C_2/(C_1+C_2)=50/(1+G)=19$，低頻輸出阻抗 $=r_{O1}/(1+19)=r_{O1}/20=2.5/g_{m1}$。\textbf{注意}：誤差的定義為 $1-$實際／理想；若題目另有定義，答案會略有不同。
+
+\subsection{題型二：回授換頻寬（GBW 不變）}
+\textbf{習題 8.4}（Fig.~8.11 的放大器 $A_0=100$、$f_{3dB}=10$\,MHz；要總增益 500 且頻寬最大，幾級、每級增益多少？）每級加回授後 GBW 固定為 1\,GHz，每級增益 $A_s=500^{1/n}$（需 $\le100$，所以 $n\ge2$），每級頻寬 $f_s=1\text{\,GHz}/A_s$。$n$ 級相同單極點串接的 $-3$\,dB 頻寬為 $f_s\sqrt{2^{1/n}-1}$。
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$n$ & 每級增益 & 每級頻寬 & 總頻寬 \\\midrule
+2 & 22.4 & 44.7\,MHz & 28.8\,MHz \\
+4 & 4.73 & 211\,MHz & 92.0\,MHz \\
+8 & 2.17 & 460\,MHz & 138\,MHz \\
+\textbf{12} & \textbf{1.68} & \textbf{596\,MHz} & \textbf{145.3\,MHz} \\
+16 & 1.47 & 678\,MHz & 142.7\,MHz \\
+\bottomrule
+\end{tabular}
+\end{center}
+最佳為 \textbf{12 級、每級增益約 1.68}（總頻寬約 145\,MHz）。連續近似下最佳 $n=2\ln500\approx12.4$，每級增益 $\approx\sqrt e\approx1.65$。實務上功耗與面積會讓人選較少級數，因為 $n$ 從 8 增到 12 只多 5\% 頻寬。
+
+\subsection{題型三：多迴路電路的精確數值}
+\textbf{習題 8.19}（Fig.~8.101，所有電阻 $2$\,k$\Omega$、$g_{m1}=g_{m2}=1/200\,\Omega$、$\lambda=\gamma=0$，求閉迴路增益與輸出阻抗）。
+\rfig{101}{0.35}{習題 8.19 的電路（p.343）}
+電路：$M_1$ 為源極接 $R_{S1}$ 的 CS 級，$M_2$ 為 CS 級並有局部 shunt-shunt 回授 $R_{F2}$（$M_2$ 閘—汲極之間），$R_{F1}$ 由輸出接回 $M_1$ 源極（整體電壓—電壓回授）。直接節點分析（未知數 $V_X$、$V_S$、$V_{out}$）：
+\[
+  A_v=\frac{V_{out}}{V_{in}}=0.746,\qquad R_{out}=179\,\Omega
+\]
+用 two-port 法（回授網路 $R_{F1}$、$R_{S1}$，$\beta=R_{S1}/(R_{F1}+R_{S1})=0.5$）：含負載的 $A_{v,open}=1.07$、迴路增益僅 $0.54$，得 $A_{v,closed}=0.698$、$R_{out}=286/1.54=186\,\Omega$。與精確值差約 6\%，因為迴路增益小，而 two-port 法忽略了經 $R_{F1}$ 的前饋（Table 8.2 的限制）。\textbf{觀察}：$R_{F2}$ 讓 $M_2$ 的輸入阻抗很低（Miller），大幅壓低第一級增益，所以迴路增益遠小於 1，閉迴路增益離理想值 $1+R_{F1}/R_{S1}=2$ 很遠。
+
+\subsection{題型四：頻率相關的回授網路（低頻／高頻極限）}
+\textbf{習題 8.23}（Fig.~8.104，$\lambda=0$、$g_{m1,2}=1/200\,\Omega$、$R_{1\text{--}3}=2$\,k$\Omega$、$C_1=100$\,pF，估計極低頻與極高頻的閉迴路增益）。
+\rfig{104}{0.3}{習題 8.23 的電路（p.343）}
+$\lambda=0$ 使 $M_2$ 為理想電流源負載。
+\begin{itemize}
+  \item \textbf{極低頻}（$C_1$ 開路）：$R_2+R_3=4$\,k$\Omega$ 為完整回授電阻。閘極節點 $(V_{in}-V_G)/R_1=(V_G-V_{out})/(R_2+R_3)$，輸出節點 $g_mV_G+(V_{out}-V_G)/(R_2+R_3)=0$，解得 $A_v=-1.73$（理想值 $-(R_2+R_3)/R_1=-2$，差在迴路增益有限）。
+  \item \textbf{極高頻}（$C_1$ 短路）：$R_2$、$R_3$ 中點接地，回授被切斷。$V_G=V_{in}R_2/(R_1+R_2)$，輸出只看到 $R_3$：$A_v=-g_mR_3\cdot\frac{R_2}{R_1+R_2}=-10\times0.5=-5$。
+\end{itemize}
+\textbf{觀念}：高頻時回授消失，增益反而變大（$C_1$ 把回授信號旁路到地）。
+
+\subsection{題型五：不斷迴路的精確分析（Bode／Blackman）}
+\textbf{辨識特徵}：非標準拓撲（感測量 $\neq$ 輸出量）、要求「精確」或「不斷開迴路」、或求某節點阻抗（\exref{8.25}--\exref{8.30}）。依推導框的步驟求 $A$–$D$ 或 $A$、$\Toc$、$\Tsc$；遇到 $A=\infty$ 先並聯 $R_T$。
+
+\begin{recipebox}[解題流程總整理]
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{求迴路增益}：主輸入歸零（電壓源短路、電流源開路）→ 在 MOSFET 閘極斷開 → 沿迴路方向注入 $V_t$ → $\text{LG}=-V_F/V_t$。或把受控源換成獨立 $I_t$，$\text{LG}=-g_mV_F/I_t$（= RR）。
+  \item \textbf{辨識拓撲}：輸出感測（並聯=電壓、串聯小電阻=電流）× 輸入相加（不同節點=電壓、同一節點=電流）→ 查比較表得 $Z_{in}$、$Z_{out}$ 是乘還是除 $1+\text{LG}$。
+  \item \textbf{含負載的開迴路}：回授網路在另一端「並聯接法就短路、串聯接法就開路」，把它的端點阻抗接到主放大器上，再求 $A_{OL}$、$R_{in,OL}$、$R_{out,OL}$；$\beta$ 依 Fig.~8.67 的定義；$\text{LG}=\beta A_{OL}$。
+  \item \textbf{閉迴路}：$A_{CL}=A_{OL}/(1+\text{LG})$；$Z$ 乘或除 $(1+\text{LG})$；頻寬乘 $(1+\beta A_0)$。電壓源驅動的電流回送電路先轉 Norton。
+  \item \textbf{精確解（Bode）}：$g_m=0$ 求 $A$、$C$；$V_{in}=0$、受控源換獨立源求 $B$、$D$；$\dfrac{V_{out}}{V_{in}}=A+\dfrac{g_mBC}{1-g_mD}$。
+  \item \textbf{任意埠阻抗（Blackman）}：$A$ = 電晶體失效時的埠阻抗；$\Toc$ = 埠開路的 RR；$\Tsc$ = 埠短路的 RR；$Z=A(1+\Tsc)/(1+\Toc)$。$A=\infty$ 時先並聯 $R_T$ 再令 $R_T\to\infty$。
+  \item \textbf{Asymptotic gain}：$H_\infty$（令 $V_{GS}=0$）、$H_0$（$g_m=0$）、$T$（RR）→ $H_\infty\frac{T}{1+T}+H_0\frac{1}{1+T}$。
+  \item \textbf{雜訊}：回授網路無雜訊且輸出即感測點時，輸入參考雜訊不變；回授元件本身的雜訊要另外加。
+\end{enumerate}
+\end{recipebox}
+
+\end{document}
