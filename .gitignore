@@ -1,0 +1,30 @@
+# ===== LaTeX 編譯產生的暫存檔 =====
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.synctex
+*.xdv
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+*.dvi
+missfont.log
+
+# ===== 系統產生的檔案 =====
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ===== 編輯器 =====
+.vscode/
