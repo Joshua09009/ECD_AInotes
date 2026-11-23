@@ -51,472 +51,588 @@
 \newcommand{\exref}[1]{\textcolor{extag}{\textbf{\sffamily 例 #1}}}
 \newcommand{\rfig}[3]{\begin{center}\includegraphics[width=#2\linewidth]{../fig/ch7/fig7_#1.png}\\[0.1em]{\small\sffamily 圖 7.#1\quad #3}\end{center}}
 
-\begin{document}
-\begin{center}{\LARGE\bfseries\sffamily ECD 單元複習講義：Noise（雜訊）}\\[0.3em]{\large Razavi, \emph{Design of Analog CMOS Integrated Circuits}, Ch.~7（pp.~219--272）}\end{center}
+% ===== 講義對照標記 =====
+\newcommand{\lec}[1]{{\small\color{black!55}（講義 p.#1）}}
+\newcommand{\supp}{{\small\color{black!55}〔講義未提・課本補充〕}}
+\newcommand{\detail}{{\small\color{black!55}〔講義略寫・詳細推導〕}}
 
-\textbf{記號約定}：本講義沿用課本寫法，$\Vsq{}$、$\Isq{}$ 都代表「每 1\,Hz 頻寬」的雜訊功率譜密度（單位 V$^2$/Hz、A$^2$/Hz），即 $\Delta f=1$\,Hz；要得到總雜訊必須再對頻率積分。$\gamma$ 若無特別說明指\textbf{通道熱雜訊係數}（長通道 $2/3$，經驗上取 $\approx1$），不是 body effect 係數。圖片皆截取自課本，圖說後標註頁碼。課本的 Examples 一律以 \extag{7.x} 標籤開頭、獨立成段，內文提到時以 \exref{7.x} 標示，方便翻閱。
+\renewcommand{\thesection}{7.\arabic{section}}
+\begin{document}
+\begin{center}{\LARGE\bfseries\sffamily ECD 單元複習講義：Ch.7 Noise（雜訊）}\\[0.3em]{\large 依課程講義〈Chapter 7 Noise〉架構重編，並以 Razavi Ch.7 補充}\end{center}
+
+\textbf{閱讀說明}：本講義的章節順序跟課程講義的 Outline（7.1--7.9）一致。\lec{x} 是課程講義的 \textbf{PDF 頁碼}（PDF 第 15 頁是手寫補充頁，之後的頁碼比投影片右下角印的號碼大 1）；圖片與「p.xxx」是 Razavi 課本頁碼。課本 Examples 一律以 \extag{7.x} 標籤開頭、獨立成段，內文提到時以 \exref{7.x} 標示。標題後的 \supp 表示課程講義沒有提到、從課本補上的例題；\detail 表示講義只列結果或只有手寫筆記，這裡把推導完整寫出。
+
+\textbf{記號約定}：$\Vsq{}$、$\Isq{}$ 都代表「每 1\,Hz 頻寬」的雜訊功率譜密度（單位 V$^2$/Hz、A$^2$/Hz），要得到總雜訊必須再對頻率積分。$\gamma$ 若無特別說明指\textbf{通道熱雜訊係數}（長通道 $2/3$，經驗上取 $\approx1$），不是 body effect 係數。
 
 \begin{takeaway}[考試重點地圖]
 \begin{enumerate}[leftmargin=2.2em]
-  \item \textbf{三個元件模型背到反射}：電阻 $4kTR$（或 $4kT/R$）、MOS 通道熱雜訊 $4kT\gamma g_m$（D–S 電流源）、flicker $\dfrac{K}{C_{ox}WL}\dfrac1f$（串在閘極的電壓源）。
-  \item \textbf{input-referred noise 的求法}：短路輸入求 $\Vsq{in}$、開路輸入求 $\Isq{in}$；配合「閘極參考」lemma $\overline{V_n^2}=\overline{I_n^2}/g_m^2$，幾乎所有單級電路都能一行寫出。
-  \item \textbf{各拓撲的 $\Vsq{in}$ 公式與直觀}：CS、電流源負載 CS、互補 CS、CG（含 $\Isq{in}=4kT/R_D$）、SF、cascode、差動對（CS 的 2 倍）、5T OTA。訊號路徑上的電晶體要 $g_m$ 大，當電流源的要 $g_m$ 小。
-  \item \textbf{積分型題目}：$kT/C$（與 $R$ 無關）、單極點雜訊頻寬 $\frac{\pi}{2}f_p$、flicker 積分得 $\ln(f_H/f_L)$、corner frequency $f_C$、SNR 計算。
-  \item \textbf{期中考題範圍}：專題資料夾中的〈Midterm Problems〉收錄了本章習題 7.1--7.7（輸入參考熱雜訊、flicker、分佈閘極電阻 $R_G/3$、lemma 證明）。第 \ref{sec:problems} 節逐題整理解法。
+  \item \textbf{三個元件模型背到反射}：電阻 $4kTR$（或 $4kT/R$）、MOS 通道熱雜訊 $4kT\gamma g_m$（D–S 電流源）、flicker $\dfrac{K}{C_{ox}WL}\dfrac1f$（串在閘極的電壓源）。\lec{10, 12, 14}
+  \item \textbf{輸入參考雜訊的求法}：短路輸入求 $\Vsq{in}$、開路輸入求 $\Isq{in}$；配合 lemma $\overline{V_n^2}=\overline{I_n^2}/g_m^2$，單級電路幾乎都能一行寫出。\lec{17--21}
+  \item \textbf{各拓撲的 $\Vsq{in}$ 與直觀}：CS、CG（含 $\Isq{in}=4kT/R_D$）、SF、cascode、電流鏡、差動對（CS 的 2 倍）、5T OTA。訊號路徑上的電晶體要 $g_m$ 大，當電流源的要 $g_m$ 小。\lec{22--36}
+  \item \textbf{積分型題目}：$kT/C$（與 $R$ 無關）、單極點雜訊頻寬 $\frac{\pi}{2}f_p$、flicker 積分得 $\ln(f_H/f_L)$、corner frequency、輸出 SNR；總雜訊一律\textbf{在輸出積分}。\lec{11, 15, 23, 39, 40}
+  \item \textbf{期中考題範圍}：〈Midterm Problems〉收錄課本習題 7.1--7.7，最後一節逐題整理。
 \end{enumerate}
 \end{takeaway}
 
 % =====================================================================
-\section{雜訊是隨機過程：只能談平均功率與頻譜}
+\section{雜訊的統計特性：只能談平均功率與頻譜}
 
-\subsection{平均功率與功率譜密度（PSD）}
-雜訊的瞬時值無法預測，但平均功率通常可預測（課本 p.~219--221）。把負載電阻省略、以 V$^2$ 為單位：
+\subsection{平均功率、PSD 與 LTI 定理 \lec{3--5}}
+雜訊是隨機過程，瞬時值無法預測，但\textbf{平均功率可預測}；而且雜訊電壓、電流仍然要滿足 KCL、KVL（講義手寫）。平均功率要在夠長的時間內量測：
 \begin{align}
 P_{av}=\lim_{T\to\infty}\frac1T\int_{-T/2}^{+T/2}x^2(t)\,dt\qquad[\text{V}^2],\qquad V_{\text{rms}}=\sqrt{P_{av}}
 \end{align}
-PSD $S_x(f)$ 是「在 $f$ 附近 1\,Hz 頻寬內」的平均功率，單位 V$^2$/Hz；常取根號寫成 nV/$\sqrt{\text{Hz}}$。例如 $3\,\text{nV}/\sqrt{\text{Hz}}$ 只是表示 1\,Hz 頻寬內功率為 $(3\times10^{-9})^2$\,V$^2$。
+（原本要除以負載 $R_L$ 才是瓦特；為了方便直接以 V$^2$ 表示。）
 
-\exhead{7.1}{221}{聲音頻譜與平均時間}
-男聲高頻成分較弱、女聲較強，所以女聲的時域波形變化較快（頻譜告訴我們波形變化有多快）。平均時間 $T$ 要涵蓋最低頻成分的數個週期：語音最低約 20\,Hz，取約 10 個週期，$T\approx500$\,ms。
+PSD $S_x(f)$ 是 $x(t)$ 通過中心在 $f$、頻寬 1\,Hz 的帶通濾波器後量到的平均功率，單位 V$^2$/Hz，常取根號寫成 V/$\sqrt{\text{Hz}}$。$S_x(f)$ 底下的總面積就是總雜訊功率；PSD 為常數者稱為\textbf{白雜訊}。
 
-\textbf{白雜訊}（white noise）：PSD 為常數。嚴格說總功率無限大，所以實際上指「在關心的頻帶內平坦」。
-
-\subsection{線性系統對頻譜的整形：$S_Y=S_X|H|^2$}
-若雜訊通過轉移函數 $H(s)$ 的 LTI 系統：
+\textbf{定理}：雜訊通過轉移函數 $H(s)$ 的 LTI 系統，
 \begin{align}
 \boxed{S_Y(f)=S_X(f)\,|H(f)|^2},\qquad H(f)=H(s=j2\pi f)
 \end{align}
-這是整章最常用的定理：每個雜訊源先求到輸出的轉移函數，平方後乘上自己的 PSD。
+取平方是因為我們關心的是\textbf{功率}。講義的電話例子：20\,kHz 的語音經 4\,kHz 頻寬的電話線，輸出頻譜被截在 4\,kHz。
 
-\textbf{單邊與雙邊頻譜}：實信號的 $S_x(f)$ 是偶函數，把負頻率部分折到正頻率，得到單邊頻譜（值變 2 倍）。本章所有元件公式（如 $4kTR$）都是\textbf{單邊}，積分範圍 $0\to\infty$。
-\rfig{09}{0.6}{(a) 雙邊頻譜，(b) 單邊頻譜（p.224）}
+\exhead{7.1}{221}{男聲與女聲的頻譜、平均時間要多長 \supp}
+\rfig{05}{0.6}{(a) 男聲與女聲的頻譜，(b) 對應的時域波形（p.222）}
+(a) 人聲約在 20\,Hz--20\,kHz。女聲的高頻成分較強，頻譜偏高頻，時域波形就變化得較快。這說明\textbf{頻譜反映波形變化的快慢}。
+(b) 平均時間 $T$ 要涵蓋最慢成分的好幾個週期：取 20\,Hz 的約 10 個週期，$T\approx500$\,ms。
 
-\subsection{相關與不相關雜訊源的疊加}
-兩個雜訊相加後的功率：
+\subsection{單邊與雙邊頻譜 \lec{6}}
+實信號的 $S_x(f)$ 是偶函數。$f_1$ 到 $f_2$ 間的功率要把正負頻率都算進去：$P_{f1,f2}=\int_{-f_2}^{-f_1}S_x\,df+\int_{f_1}^{f_2}S_x\,df=\int_{f_1}^{f_2}2S_x\,df$。把負頻率折到正頻率（值變 2 倍）就是\textbf{單邊頻譜}，也就是功率計實際量到的；本章元件公式（如 $4kTR$）都是單邊，積分範圍 $0\to\infty$。
+
+\subsection{相關與不相關雜訊源 \lec{7}}
 \begin{align}
-P_{av}=P_{av1}+P_{av2}+\lim_{T\to\infty}\frac1T\int 2x_1(t)x_2(t)\,dt
+P_{av}=P_{av1}+P_{av2}+\underbrace{\lim_{T\to\infty}\frac1T\int_{-T/2}^{+T/2}2x_1(t)x_2(t)\,dt}_{\text{相關項}}
 \end{align}
-第三項是相關項。不同元件產生的雜訊彼此獨立 $\Rightarrow$ 相關項為零 $\Rightarrow$ \textbf{功率可以疊加}（電壓不能直接相加）。唯一要小心的是：同一個雜訊源經兩條路徑到達同一點（例如差動對中 $I_{n1}$ 同時流過 $R_{D1}$ 與 $R_{D2}$），這時要先把\textbf{電壓}相加再平方。
+獨立元件產生的雜訊不相關 $\Rightarrow$ 相關項為 0 $\Rightarrow$ \textbf{功率可以疊加}（電壓不能直接相加）。同一個雜訊源經兩條路徑到達同一點時兩者完全相關，要先把\textbf{電壓}相加再平方（例如差動對中 $I_{n1}$ 同時流過 $R_{D1}$ 與 $R_{D2}$，見 7.6 節）。
 
-\subsection{SNR 與雜訊分析四步驟}
-$\text{SNR}=P_{sig}/P_{noise}$，弦波振幅 $A$ 時 $P_{sig}=A^2/2$；$P_{noise}=\int S_{noise}(f)\,df$。頻寬開得越寬、積到的雜訊越多，所以\textbf{頻寬應限制在應用所需的最小值}。
+\subsection{SNR 與雜訊分析四步驟 \lec{8--9}}
+$\text{SNR}=P_{sig}/P_{noise}$，峰值 $A$ 的弦波 $P_{sig}=A^2/2$，$P_{noise}=\int S_{noise}(f)\,df$。所需的最低 SNR 由系統規格決定（講義手寫：例如通訊系統由位元錯誤率決定）。放大器頻寬若比訊號頻寬（例如音訊 20\,kHz）寬很多，多出來的頻寬只會放大不要的雜訊，所以\textbf{頻寬應限制在應用所需的最小值}。
 
-\exhead{7.2}{227}{積分白雜訊（數值）}
-$S=5\times10^{-16}$\,V$^2$/Hz，1\,MHz 頻寬 $\Rightarrow P=5\times10^{-10}$\,V$^2$，$V_{\text{rms}}=22.4\,\mu$V。注意總雜訊單位是 V$^2$，不是 V$^2$/Hz。
+\exhead{7.2}{227}{白雜訊在 1\,MHz 頻寬的總功率（數值）\supp}
+$S=5\times10^{-16}$\,V$^2$/Hz，1\,MHz 頻寬 $\Rightarrow P=5\times10^{-10}$\,V$^2$，$V_{\text{rms}}=22.4\,\mu$V。注意總雜訊的單位是 V$^2$，不是 V$^2$/Hz。
 
-\textbf{分析四步驟}（p.~227）：(1) 找出所有雜訊源並寫下 PSD；(2) 求每個源到輸出的轉移函數（輸入信號設為零）；(3) 用 $S_Y=S_X|H|^2$ 得到各自的輸出頻譜；(4) 不相關者功率相加，最後對頻率積分得總雜訊。
+\textbf{分析四步驟}：(1) 找出所有雜訊源並寫下各自的 PSD；(2) 把每個雜訊源當成確定性訊號，求它到輸出的轉移函數（輸入訊號設為零）；(3) 用 $S_Y=S_X|H|^2$ 得到各自的輸出頻譜；(4) 不相關者功率相加，最後對頻率積分得總雜訊。
 
 % =====================================================================
-\section{熱雜訊：電阻 $4kTR$、MOSFET $4kT\gamma g_m$}
+\section{雜訊的種類：熱雜訊 $4kTR$、$4kT\gamma g_m$ 與 flicker 雜訊}
 
-\subsection{電阻熱雜訊與兩種等效模型}
+\subsection{電阻熱雜訊 \lec{10}}
+「有溫度就有熱雜訊」（講義手寫）：導體中電子的隨機熱運動，使兩端電壓起伏，即使平均電流為零。
 \begin{align}
-\overline{V_n^2}=4kTR\ \ (\text{串聯電壓源})\qquad\Longleftrightarrow\qquad \overline{I_n^2}=\frac{4kT}{R}\ \ (\text{並聯電流源})
+\overline{V_n^2}=4kTR\ \ (\text{串聯電壓源})\qquad\Longleftrightarrow\qquad \overline{I_n^2}=\frac{\overline{V_n^2}}{R^2}=\frac{4kT}{R}\ \ (\text{並聯電流源})
 \end{align}
-$k=1.38\times10^{-23}$\,J/K，$T=300$\,K 時 $kT=4.14\times10^{-21}$\,J。50\,$\Omega$ 電阻：$8.28\times10^{-19}$\,V$^2$/Hz，即 $0.91\,\text{nV}/\sqrt{\text{Hz}}$。熱雜訊在約 100\,THz 以內都是白的。雜訊源極性可任意選，但一旦選定，整個分析中要保持一致。
+$k=1.38\times10^{-23}$\,J/K；$T=300$\,K 時 $kT=4.14\times10^{-21}$\,J。50\,$\Omega$ 電阻：$8.28\times10^{-19}$\,V$^2$/Hz，也就是 $0.91\,\text{nV}/\sqrt{\text{Hz}}$。白雜訊；雜訊源的極性可任選，但同一次分析中要一致。
 
-\exhead{7.4}{230}{兩電阻並聯的雜訊}
-用電流源模型，功率相加：$\Isq{tot}=4kT(1/R_1+1/R_2)$，故 $\Vsq{tot}=4kT(R_1\parallel R_2)$，即並聯電阻的熱雜訊等於其等效電阻的熱雜訊。
-
-\subsection{RC 電路的總雜訊：$kT/C$}
-\rfig{16}{0.62}{電阻雜訊被 RC 低通整形（p.229）}
-
+\subsection{電阻熱雜訊的兩個例子 \lec{11}}
 \exhead{7.3}{228}{RC 低通濾波器的總輸出雜訊（重要新觀察：$kT/C$ 與 $R$ 無關）}
+\rfig{16}{0.62}{電阻雜訊被 RC 低通整形（p.229）}
 \begin{derivationbox}[完整推導與計算步驟：RC 低通濾波器的總輸出雜訊 $kT/C$]
 \begin{enumerate}[leftmargin=2.2em]
   \item \textbf{寫下雜訊源}：$R$ 以串聯電壓源 $V_R$ 表示，$S_v(f)=4kTR$。
   \item \textbf{求轉移函數}：$\dfrac{V_{out}}{V_R}(s)=\dfrac{1}{RCs+1}\ \Rightarrow\ \left|\dfrac{V_{out}}{V_R}(j2\pi f)\right|^2=\dfrac{1}{4\pi^2R^2C^2f^2+1}$
   \item \textbf{輸出頻譜}：$S_{out}(f)=\dfrac{4kTR}{4\pi^2R^2C^2f^2+1}$
-  \item \textbf{對 $f$（不是 $\omega$）積分}：令 $u=2\pi RCf$，$df=du/(2\pi RC)$，
+  \item \textbf{對 $f$（不是 $\omega$）積分}：令 $u=2\pi RCf$，$df=du/(2\pi RC)$，並用 $\int\frac{dx}{x^2+1}=\tan^{-1}x$：
   \[P_{n,out}=\int_0^\infty\frac{4kTR\,df}{4\pi^2R^2C^2f^2+1}=\frac{4kTR}{2\pi RC}\int_0^\infty\frac{du}{u^2+1}=\frac{2kT}{\pi C}\Big[\tan^{-1}u\Big]_0^\infty=\frac{2kT}{\pi C}\cdot\frac{\pi}{2}\]
   \[\boxed{P_{n,out}=\frac{kT}{C}}\]
   \item \textbf{數值與直觀}：
   \begin{itemize}[label=\textperiodcentered,leftmargin=1.5em]
     \item $C=1$\,pF、300\,K：$\sqrt{kT/C}=64.3\,\mu\text{V}_{\text{rms}}$。
-    \item 與 $R$ 無關：$R$ 變大時單位頻寬雜訊 $\propto R$ 增加，但頻寬 $\propto 1/R$ 減少，兩者抵消。
-    \item 要降低 $kT/C$ 只能加大 $C$（或降溫），這是取樣電路、切換電容電路的根本限制。
+    \item 與 $R$ 無關：$R$ 變大時每 Hz 的雜訊 $\propto R$ 增加，但頻寬 $\propto 1/R$ 減少，兩者抵消。
+    \item 要降低 $kT/C$ 只能加大 $C$，代價是速度；這是取樣與切換電容電路的根本限制。
   \end{itemize}
 \end{enumerate}
 \end{derivationbox}
 
-\textbf{注意：}積分要對 $f$ 做，因為 PSD 定義是「每 Hz」；若對 $\omega$ 積分要除以 $2\pi$。
-
-\subsection{MOSFET 通道熱雜訊}
-飽和區長通道元件的通道熱雜訊可模型化為 D–S 間的電流源：
+\exhead{7.4}{230}{兩電阻並聯的雜訊}
+改用電流源模型，兩個電流源並聯、不相關，功率相加：
 \begin{align}
-\boxed{\overline{I_n^2}=4kT\gamma g_m},\qquad \gamma=\tfrac23\ (\text{長通道}),\ \text{短通道更大，經驗取}\ \gamma\approx1
+\overline{I^2_{n,tot}}=\overline{I^2_{n1}}+\overline{I^2_{n2}}=4kT\left(\frac1{R_1}+\frac1{R_2}\right)
+\ \Rightarrow\ \overline{V^2_{n,tot}}=4kT(R_1\parallel R_2)
 \end{align}
-\exhead{7.5}{231}{單一 MOSFET 能產生的最大雜訊電壓（重要新觀察）}
-\rfig{20}{0.28}{單一 MOSFET 能產生的最大輸出雜訊（p.231）}
-負載為理想電流源時，輸出只看到 $r_O$，$\Vsq{out}=4kT\gamma g_m r_O^2$，這是單顆電晶體可能產生的最大雜訊電壓。三個觀察：
+即並聯電阻的雜訊等於其等效電阻的雜訊。講義手寫提醒：若兩個電流相關，$\overline{(I_{n1}+I_{n2})^2}=\overline{I^2_{n1}}+\overline{I^2_{n2}}+2\overline{I_{n1}I_{n2}}$，多出交叉項。
+
+\subsection{MOSFET 通道熱雜訊 \lec{12}}
+飽和區長通道元件的通道熱雜訊以 D–S 間的電流源表示：
+\begin{align}
+\boxed{\overline{I_n^2}=4kT\gamma g_m},\qquad \gamma=\tfrac23\ (\text{長通道}),\ \text{次微米元件更大，經驗取}\ \gamma\approx1
+\end{align}
+
+\exhead{7.5}{231}{單一 MOSFET 能產生的最大輸出雜訊（重要新觀察）}
+\rfig{20}{0.28}{負載為理想電流源的 MOSFET（p.231）}
+輸入接交流地（$v_{gs}=0$，$g_mv_{gs}=0$），雜訊電流只能流過 $r_O$：
+\begin{align}
+\Vsq{out}=\overline{I_n^2}\,r_O^2=4kT\gamma g_m r_O^2
+\end{align}
+這是單顆電晶體可能產生的最大雜訊電壓。三個觀察：
 \begin{enumerate}[leftmargin=2em]
-  \item 雜訊電流 $\propto g_m$：當作\textbf{電流源}的電晶體應使 $g_m$ 小。
+  \item 雜訊電流 $\propto g_m$：電晶體當\textbf{電流源}使用時，希望 $g_m$ 小（講義手寫：$g_m\downarrow\Rightarrow\Vsq{out}\downarrow$）。
   \item 求輸出雜訊時輸入設為零，所以同一電路當 CS 或 CG 看，輸出雜訊相同。
   \item $r_O$ 不是實體電阻，\textbf{不產生雜訊}。
 \end{enumerate}
 
-\subsection{閘極分佈電阻 $R_G$ 的雜訊}
-\rfig{21}{0.62}{(a) MOS 佈局中的端點電阻；(b) 雜訊模型；(c) 分佈式閘極電阻（p.232）}
-閘極多晶矽有分佈電阻 $R_G$。靠近接點的單元電晶體只看到一小段電阻的雜訊，遠端則看到大部分，所以等效集總電阻小於 $R_G$；可證明（習題 7.3，推導見第 \ref{sec:problems} 節）
+\subsection{閘極分佈電阻 $R_G$ 的雜訊：等效 $R_G/3$ \lec{13} \detail}
+\rfig{21}{0.62}{(a) 佈局中的端點電阻；(b) 雜訊模型；(c) 分佈式閘極電阻（p.232）}
+寬電晶體的 $R_S$、$R_D$ 可忽略，但閘極多晶矽的分佈電阻 $R_G$ 會變得明顯。講義寫出等效電阻 $R_G/3$ 並手寫推導，這裡把推導完整寫出（也是習題 7.3 的證明）。
+
+把閘極切成 $n$ 段，每段電阻 $R_G/n$、雜訊電壓 $V_k$（彼此不相關，$\overline{V_k^2}=4kTR_G/n$），每段配一個單元電晶體 $g_{mu}=g_m/n$。忽略通道雜訊、閘極電流為零，第 $j$ 個單元的閘極電壓是它與接點之間各段雜訊的和 $\sum_{k\le j}V_k$：
 \begin{align}
-R_1=\frac{R_G}{3},\qquad \overline{V^2_{n,R_G}}=4kT\,\frac{R_G}{3}
+i_{tot}&=g_{mu}\sum_{j=1}^n\sum_{k=1}^jV_k=g_{mu}\sum_{k=1}^n(n-k+1)V_k\qquad(\text{同一個 }V_k\text{ 影響 }n-k+1\text{ 個單元，先加電壓})\\
+\overline{i_{tot}^2}&=\frac{g_m^2}{n^2}\cdot\frac{4kTR_G}{n}\sum_{m=1}^nm^2=\frac{g_m^2}{n^2}\cdot\frac{4kTR_G}{n}\cdot\frac{n(n+1)(2n+1)}{6}
+\ \xrightarrow{n\to\infty}\ g_m^2\cdot4kT\,\frac{R_G}{3}
 \end{align}
-\textbf{佈局改善}（圖 7.22）：兩端都接金屬 $\Rightarrow$ 分佈電阻 $R_G\to R_G/4$；折成 2 根 finger 也是 $R_G/4$。一般來說，\textbf{切成 $N$ 根並聯 finger，分佈電阻降為 $1/N^2$}。
-\exhead{7.6}{233}{4 根 finger 的閘極電阻雜訊}
-4 根 finger，每根分佈電阻 $R_G/4$、集總 $R_G/12$，四根並聯 $R_G/48$，雜訊 $4kTR_G/48$。
+等效於閘極串一個集總電阻：
+\begin{align}
+\boxed{\overline{V^2_{n,R_G}}=4kT\,\frac{R_G}{3}}
+\end{align}
+直觀：靠近接點的單元只看到一小段電阻的雜訊，遠端才看到大部分，所以等效電阻小於 $R_G$。
+
+\textbf{佈局改善}（圖 7.22）：閘極兩端都接金屬（double contact），從中點看兩側各是 $R_G/2$、並聯後分佈電阻變 $R_G/4$；折成 2 根 finger 也是 $R_G/4$。一般來說，\textbf{切成 $N$ 根並聯 finger，分佈電阻降為 $1/N^2$}（每根長度 $1/N$、且 $N$ 根並聯）。
 \rfig{22}{0.5}{降低閘極電阻：(a) 兩側接點，(b) folding（p.232）}
-\exhead{7.7}{233}{閘極電阻雜訊可忽略的條件（新觀察）}
-要使閘極電阻雜訊可忽略，比較 $4kT\frac{R_G}{3}(g_mr_O)^2\ll 4kT\gamma g_m r_O^2$，得
+
+\exhead{7.6}{233}{4 根 finger 的閘極電阻雜訊 \supp}
+每根寬 $W/4$，分佈電阻 $R_G/4$，集總等效 $R_G/12$；四根並聯 $R_G/48$，雜訊 $\overline{V^2_{n,R_G}}=4kT\,R_G/48$。
+
+\exhead{7.7}{233}{閘極電阻雜訊可忽略的條件（新觀察）\supp}
+$R_G/3$ 的雜訊經 $g_mr_O$ 放大到輸出，與通道雜訊（\exref{7.5}）比較：
 \begin{align}
-\boxed{\frac{R_G}{3}\ll\frac{\gamma}{g_m}}
+4kT\frac{R_G}{3}(g_mr_O)^2\ll 4kT\gamma g_m r_O^2\ \Rightarrow\ \boxed{\frac{R_G}{3}\ll\frac{\gamma}{g_m}}
 \end{align}
-\textbf{注意：}一般元件模型內含熱雜訊與 flicker 雜訊，但\textbf{不含閘極電阻雜訊}，要由設計者自行加入。
+finger 數要選得夠多以滿足此條件。\textbf{注意：}一般元件模型含熱雜訊與 flicker 雜訊，但\textbf{不含閘極電阻雜訊}，要自己加。
 
-% =====================================================================
-\section{Flicker（$1/f$）雜訊：與面積成反比、主宰低頻}
-
-\subsection{模型與物理來源}
-氧化層–矽介面的 dangling bonds 形成陷阱能階，載子隨機被捕捉、釋放，造成汲極電流的 flicker 雜訊。飽和區中模型化為串在閘極的電壓源：
+\subsection{Flicker（$1/f$）雜訊 \lec{14--15}}
+氧化層與矽之間的介面有許多 dangling bonds，形成陷阱能階，載子隨機被捕捉、釋放（講義四個能帶示意：電子捕捉、電子釋放、電洞捕捉、電洞釋放），造成汲極電流的低頻起伏。以串在閘極的電壓源表示：
 \begin{align}
 \boxed{\overline{V_n^2}=\frac{K}{C_{ox}WL}\cdot\frac1f},\qquad K\sim10^{-25}\ \text{V}^2\text{F}
 \end{align}
 \begin{itemize}[leftmargin=2em]
-  \item 與偏壓電流、溫度（近似）無關；與\textbf{閘極面積 $WL$} 成反比 $\Rightarrow$ 低雜訊應用中元件面積可達數百 $\mu$m$^2$（本質上是雜訊與閘極電容 $WLC_{ox}$ 的取捨）。
-  \item \textbf{PMOS 的 $1/f$ 雜訊通常小於 NMOS}：電洞走「埋入式通道」，離介面較遠，受陷阱影響較小。
-  \item 換成汲極電流：$\overline{I^2_{n,1/f}}=\dfrac{K}{C_{ox}WL}\dfrac1f\,g_m^2$。
+  \item 近似與偏壓、溫度無關（講義註明這是近似）。
+  \item 與閘極面積 $WL$ 成反比：$WL\uparrow\Rightarrow\overline{V_n^2}\downarrow$，但閘極電容 $\uparrow$。
+  \item \textbf{通常 PMOS 的 $1/f$ 雜訊小於 NMOS}：電洞走「埋入式通道」，離介面較遠。
+  \item 極低頻的 $1/f$ 雜訊要觀察極長時間才看得到（例如 $10^{-6}$\,Hz 要約 $10^6$\,s），表現得更像漂移或 offset（講義手寫）。
+  \item 換成汲極電流：$\overline{I^2_{n,1/f}}=g_m^2\overline{V^2_{n,1/f}}=\dfrac{K}{C_{ox}WL}\dfrac1f\,g_m^2$。
 \end{itemize}
 
-\subsection{積分：$\ln(f_H/f_L)$ 與「無限大」的解讀}
+\textbf{Corner frequency $f_C$} \detail：令汲極電流中熱雜訊與 $1/f$ 雜訊相等，
+\begin{align}
+4kT\gamma g_m=\frac{K}{C_{ox}WL}\frac{1}{f_C}g_m^2\ \Rightarrow\ \boxed{f_C=\frac{K}{C_{ox}WL}\cdot\frac{g_m}{4kT\gamma}}
+\end{align}
+講義手寫頁再代入 $g_m=\mu_nC_{ox}\frac WL(V_{GS}-V_{TH})$：
+\begin{align}
+f_C=\frac{K}{C_{ox}WL}\cdot\frac{\mu_nC_{ox}(W/L)(V_{GS}-V_{TH})}{4kT\gamma}=\frac{K\mu_n(V_{GS}-V_{TH})}{4\gamma kT\,L^2}
+\end{align}
+所以 $L$ 與 overdrive 固定時 $f_C$ 幾乎是常數，與 $W$ 無關；縮短 $L$ 會讓 $f_C$ 快速上升（奈米製程可達數十 MHz 以上）。
+\rfig{27}{0.36}{$1/f$ 雜訊 corner frequency（p.235）}
+
 \exhead{7.8}{234}{NMOS 電流源在 1\,kHz--1\,MHz 的熱雜訊與 $1/f$ 雜訊}
 \begin{align}
 \overline{I^2_{n,th,tot}}&=4kT\gamma g_m(10^6-10^3)\approx4kT\gamma g_m\times10^6\ \text{A}^2\\
 \overline{I^2_{n,1/f,tot}}&=\frac{Kg_m^2}{C_{ox}WL}\int_{10^3}^{10^6}\frac{df}{f}=\frac{Kg_m^2}{C_{ox}WL}\ln10^3=\frac{6.91\,Kg_m^2}{C_{ox}WL}
 \end{align}
-$f_L\to0$ 時積分發散，但物理上代表「觀察時間無限長才會看到的極慢變動」，與熱漂移、老化無法區分；而且是對數相依，$f_L$ 從 1\,kHz 改成 100\,Hz，係數只由 6.91 變為 9.21，所以 $f_L$ 選得粗略也無妨。
+$f_L\to0$ 時積分發散，但這代表觀察時間無限長才看得到的極慢變動，與熱漂移、老化無法區分；而且是對數相依，$f_L$ 從 1\,kHz 改成 100\,Hz，係數只由 6.91 變為 9.21，所以 $f_L$ 粗估即可。
 
-\subsection{Corner frequency $f_C$}
-\rfig{27}{0.36}{$1/f$ 雜訊 corner frequency（p.235）}
-令汲極電流中熱雜訊與 $1/f$ 雜訊相等：
-\begin{align}
-4kT\gamma g_m=\frac{K}{C_{ox}WL}\frac{1}{f_C}g_m^2\quad\Longrightarrow\quad\boxed{f_C=\frac{K}{C_{ox}WL}\cdot\frac{g_m}{4kT\gamma}}
-\end{align}
-雖然與面積和 $g_m$ 有關，但給定 $L$ 時相依性很弱，奈米製程約在 10--50\,MHz（NMOS 甚至數百 MHz）。
-
-\exhead{7.9}{236}{由 corner frequency 反推 $K$（數值驗算）}
-$W/L=100/0.5$、$g_m=1/100\,\Omega$、$f_C=500$\,kHz、$t_{ox}=90$\,\AA（$C_{ox}=3.84\,\text{fF}/\mu\text{m}^2$）、$\gamma=2/3$：
-\[K=f_C\,\gamma\,C_{ox}WL\,\frac{4kT}{g_m}=5\times10^5\cdot\tfrac23\cdot(3.84\times10^{-15}\cdot50)\cdot\frac{1.656\times10^{-20}}{10^{-2}}\approx1.06\times10^{-25}\ \text{V}^2\text{F}\]
+\exhead{7.9}{236}{由 corner frequency 反推 $K$（數值驗算）\supp}
+$W/L=100/0.5$、$g_m=1/(100\,\Omega)$、$f_C=500$\,kHz、$t_{ox}=90$\,\AA（$C_{ox}=3.84\,\text{fF}/\mu\text{m}^2$）、$\gamma=2/3$：$K=f_C\,\gamma\,C_{ox}WL\cdot4kT/g_m\approx1.06\times10^{-25}$\,V$^2$F。
 
 % =====================================================================
 \section{電路中的雜訊表示法：輸出雜訊與輸入參考雜訊}
 
-\subsection{輸出雜訊：以 CS 級為例}
+\subsection{輸出雜訊：輸入設為零 \lec{16}}
 \rfig{29}{0.48}{(a) CS 級；(b) 含雜訊源（p.237）}
 \exhead{7.10}{236}{CS 級的總輸出雜訊}
 $M_1$ 的熱雜訊與 $1/f$ 雜訊、$R_D$ 的熱雜訊都以電流源表示，全部流過 $R_D$（$\lambda=0$）：
 \begin{align}
 \Vsq{out}=\left(4kT\gamma g_m+\frac{K}{C_{ox}WL}\frac1f g_m^2+\frac{4kT}{R_D}\right)R_D^2
 \end{align}
+講義手寫：後面接一個無雜訊放大器 $A_1$ 時，訊號與雜訊一起被放大 $A_1$ 倍，SNR 與 $A_1$ 無關。所以輸出雜訊不適合用來比較電路，要改看輸入參考雜訊。
 
-\subsection{輸入參考雜訊電壓 $\Vsq{in}$}
-輸出雜訊會隨後級增益放大，不能公平比較電路（後接無雜訊放大器 $A_1$ 時輸出雜訊變 $A_1^2$ 倍，但輸出 SNR 不變）。因此把所有雜訊等效成輸入端一個源，使輸出雜訊不變：$\Vsq{in}=\Vsq{out}/A_v^2$。
+\subsection{輸入參考雜訊電壓 $\Vsq{in}$ \lec{17}}
+把所有雜訊等效成輸入端一個源，使\textbf{輸出雜訊不變}（公平比較）：$\Vsq{out}=A_v^2\Vsq{in}$。
 \rfig{31}{0.6}{輸入參考雜訊電壓的定義（p.237）}
 \exhead{7.11}{238}{CS 級的輸入參考雜訊電壓}
 \begin{align}
 \Vsq{in}=\frac{\Vsq{out}}{g_m^2R_D^2}=4kT\frac{\gamma}{g_m}+\frac{K}{C_{ox}WL}\frac1f+\frac{4kT}{g_m^2R_D}
 \end{align}
 \begin{itemize}[leftmargin=2em]
-  \item 第一項相當於串在閘極、阻值 $\gamma/g_m$ 的電阻熱雜訊；第三項相當於阻值 $(g_m^2R_D)^{-1}$ 的電阻。「等效熱雜訊電阻 $R_T$」即指 $\Vsq{in,th}=4kTR_T$。
-  \item \textbf{為何 $R_D$ 越大，$\Vsq{in}$ 越小？}$R_D$ 在輸出的雜訊電壓 $\propto\sqrt{R_D}$，增益 $\propto R_D$。
-  \item 輸入參考雜訊是\textbf{虛構量}，無法在輸入端量到；但它直接告訴我們電路能偵測多小的輸入信號。
+  \item 第一項相當於串在閘極、阻值 $\gamma/g_m$ 的電阻熱雜訊；第三項相當於阻值 $(g_m^2R_D)^{-1}$ 的電阻。
+  \item \textbf{為何 $R_D\uparrow$ 反而 $\Vsq{in}\downarrow$？}$R_D$ 在輸出的雜訊電壓 $\propto\sqrt{R_D}$，增益 $\propto R_D$（講義手寫）。
+  \item 輸入參考雜訊是\textbf{虛構量}，無法在輸入端量到；但它直接說明電路能偵測多小的訊號。
 \end{itemize}
 
-\subsection{為何還需要 $\Isq{in}$：有限輸入阻抗的問題}
-\rfig{32}{0.75}{(a) 含 $C_{in}$ 的 CS 級；(b) 由有限源阻抗驅動；(c) 只用電壓源會出錯（p.239）}
-若只用 $\Vsq{in}$，前級輸出阻抗 $R_1$ 與 $C_{in}$ 分壓，會得 $\Vsq{out}=\dfrac{4kT\gamma g_mR_D^2}{R_1^2C_{in}^2\omega^2+1}$，即 $R_1\to\infty$ 時 $M_1$ 的輸出雜訊消失，這顯然錯誤。解法是同時用串聯電壓源 $\Vsq{in}$ 與並聯電流源 $\Isq{in}$；兩者對任何線性二埠都是\textbf{充分且必要}的表示。
-
+\subsection{為何還需要 $\Isq{in}$ \lec{18}}
+\rfig{32}{0.75}{(a) 含 $C_{in}$ 的 CS 級；(b) 前級有限輸出阻抗 $R_1$；(c) 只用電壓源會出錯（p.239）}
+若只用 $\Vsq{in}$，$R_1$ 與 $C_{in}$ 分壓：
+\begin{align}
+\Vsq{out}=\Vsq{in}\left|\frac{1}{R_1C_{in}j\omega+1}\right|^2(g_mR_D)^2=\frac{4kT\gamma g_mR_D^2}{R_1^2C_{in}^2\omega^2+1}
+\end{align}
+$R_1\to\infty$ 時 $M_1$ 的輸出雜訊竟然消失，但實際上 $M_1$ 的雜訊與前級無關，應恆為 $4kT\gamma g_mR_D^2$（講義手寫：wrong）。解法：同時用串聯電壓源 $\Vsq{in}$ 與並聯電流源 $\Isq{in}$，兩者對任何線性二埠都是\textbf{充分且必要}的表示。
 \begin{center}
 \includegraphics[width=0.27\linewidth]{../fig/ch7/fig7_33.png}\hspace{1.5em}
 \includegraphics[width=0.52\linewidth]{../fig/ch7/fig7_34.png}\\[0.1em]
 {\small\sffamily 圖 7.33\quad 電壓+電流源表示法（p.239）\qquad 圖 7.34\quad (a) 短路求 $\Vsq{in}$，(b) 開路求 $\Isq{in}$（p.239）}
 \end{center}
 
-\textbf{求法（兩個極端源阻抗）}：
+\subsection{兩個極端源阻抗：短路求 $\Vsq{in}$、開路求 $\Isq{in}$ \lec{19}}
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{輸入短路}（$Z_S=0$）：$\Isq{in}$ 被短路、不影響輸出 $\Rightarrow$ 實際電路的輸出雜訊全來自 $\Vsq{in}$。
-  \item \textbf{輸入開路}（$Z_S=\infty$）：$\Vsq{in}$ 沒有電流可推、不影響輸出 $\Rightarrow$ 輸出雜訊全來自 $\Isq{in}$。
+  \item \textbf{輸入短路}（$Z_S=0$）：$\Isq{in}$ 被短路、不影響輸出，輸出雜訊全來自 $\Vsq{in}$。
+  \item \textbf{輸入開路}（$Z_S=\infty$）：$\Vsq{in}$ 沒有電流可推、不影響輸出，輸出雜訊全來自 $\Isq{in}$。
 \end{itemize}
 
 \exhead{7.12}{239}{CS 級含 $C_{in}$ 的 $\Vsq{in}$ 與 $\Isq{in}$（只考慮熱雜訊）}
 \rfig{35}{0.58}{輸入短路與輸入開路（p.240）}
-短路時 $\Vsq{in}=4kT\gamma/g_m+4kT/(g_m^2R_D)$。開路時 $\Isq{in}$ 流過 $C_{in}$：
+短路時 $\Vsq{in}=4kT\gamma/g_m+4kT/(g_m^2R_D)$。開路時 $\Isq{in}$ 流過 $C_{in}$ 產生閘極電壓，令其輸出等於真實電路開路時的輸出：
 \begin{align}
 \Isq{in}\left(\frac{1}{C_{in}\omega}\right)^2g_m^2R_D^2=\left(4kT\gamma g_m+\frac{4kT}{R_D}\right)R_D^2
 \ \Rightarrow\ \boxed{\Isq{in}=(C_{in}\omega)^2\frac{4kT}{g_m^2}\left(\gamma g_m+\frac1{R_D}\right)}
 \end{align}
 低頻時 $\Isq{in}\to0$，所以 MOS 閘極輸入的電路在低頻通常只需考慮 $\Vsq{in}$。
 
-\textbf{何時可忽略 $\Isq{in}$}（圖 7.36）：節點 $X$ 的雜訊 $V_{n,X}=\frac{Z_{in}}{Z_{in}+Z_S}V_{n,in}+\frac{Z_{in}Z_S}{Z_{in}+Z_S}I_{n,in}$，因此
+\textbf{何時可以忽略 $\Isq{in}$} \supp（課本 p.240，圖 7.36）：前級輸出阻抗為 $Z_S$ 時，本級輸入節點 $X$ 的雜訊為 $V_{n,X}=\frac{Z_{in}}{Z_{in}+Z_S}V_{n,in}+\frac{Z_{in}Z_S}{Z_{in}+Z_S}I_{n,in}$，因此
 \begin{align}
 \boxed{|Z_S|^2\ll\frac{\Vsq{in}}{\Isq{in}}}\ \Rightarrow\ \Isq{in}\ \text{可忽略}
 \end{align}
-決定 $I_{n,in}$ 重要性的是\textbf{前級的輸出阻抗 $Z_S$}，不是本級的 $Z_{in}$。
+決定 $I_{n,in}$ 重不重要的是\textbf{前級的輸出阻抗 $Z_S$}，不是本級的 $Z_{in}$。
 \rfig{36}{0.3}{輸入雜訊電流的影響（p.240）}
 
-\textbf{相關性與「不會重複計算」}：$V_{n,in}$ 與 $I_{n,in}$ 常來自同一批雜訊源，彼此高度相關。以圖 7.37 為例，$V_{n,in}=V_{n,M1}+\frac{V_{n,R_D}}{g_mR_D}$、$I_{n,in}=C_{in}s\,V_{n,M1}+\frac{C_{in}s}{g_mR_D}V_{n,R_D}$，用\textbf{電壓疊加}（而非功率）代入節點 $X$，得 $V_{n,X}=V_{n,M1}+V_{n,R_D}/(g_mR_D)$，與 $Z_S$、$C_{in}$ 無關，輸出雜訊與 (7.52) 相同，證明兩源不會重複計算雜訊。
+\subsection{同時用 $V_{n,in}$ 與 $I_{n,in}$ 會不會把雜訊算兩次？\lec{20} \detail}
+\rfig{37}{0.45}{由源阻抗 $Z_S$ 驅動的 CS 級（p.241）}
+不會。關鍵是 $V_{n,in}$ 與 $I_{n,in}$ 來自同一批雜訊源、\textbf{高度相關}，必須用電壓（而非功率）疊加。由 \exref{7.12} 的兩個結果改寫成電壓形式（$V_{n,M1}$ 是 $M_1$ 的閘極參考雜訊、$V_{n,RD}$ 是 $R_D$ 的雜訊電壓）：
+\begin{align}
+V_{n,in}=V_{n,M1}+\frac{1}{g_mR_D}V_{n,RD},\qquad I_{n,in}=C_{in}s\,V_{n,M1}+\frac{C_{in}s}{g_mR_D}V_{n,RD}=C_{in}s\,V_{n,in}
+\end{align}
+節點 $X$ 的電壓（$V_{n,in}$ 經 $Z_S$、$1/(C_{in}s)$ 分壓，加上 $I_{n,in}$ 流過 $Z_S\parallel\frac1{C_{in}s}$）：
+\begin{align}
+V_{n,X}&=V_{n,in}\frac{1/(C_{in}s)}{1/(C_{in}s)+Z_S}+I_{n,in}\frac{Z_S/(C_{in}s)}{1/(C_{in}s)+Z_S}=\frac{V_{n,in}+I_{n,in}Z_S}{Z_SC_{in}s+1}\\
+&=\frac{V_{n,in}(1+C_{in}sZ_S)}{Z_SC_{in}s+1}=V_{n,M1}+\frac{1}{g_mR_D}V_{n,RD}
+\end{align}
+與 $Z_S$、$C_{in}$ 都無關，故 $\Vsq{out}=g_m^2R_D^2\overline{V^2_{n,X}}=4kT\left(\gamma g_m+\frac1{R_D}\right)R_D^2$，正是真實電路的輸出雜訊，沒有重複計算。
 
 \begin{trapbox}[常見陷阱：輸入參考雜訊的計算]
 \begin{enumerate}[leftmargin=2.2em]
-  \item \textbf{除以增益平方}：$\Vsq{in}=\Vsq{out}/A_v^2$，不是除以 $A_v$；$\Isq{in}$ 則除以「電流增益」或「轉阻」的平方。
-  \item \textbf{$V_{n,in}$ 與 $I_{n,in}$ 相關}：兩者同時作用時（有限 $Z_S$），不可以把功率直接相加，要回到電壓疊加或用附錄 A 的方法。
-  \item \textbf{不能對 $\Vsq{in}$ 直接積分}：輸入參考頻譜常是白的（積分發散），總雜訊要在\textbf{輸出}積分後再除以中頻增益平方（第 \ref{sec:bw} 節）。
-  \item \textbf{$r_O$ 不產生雜訊}，但會影響轉移函數；題目給 $\lambda\neq0$ 時記得用 $r_O$ 並聯計算輸出阻抗。
+  \item \textbf{除以增益平方}：$\Vsq{in}=\Vsq{out}/A_v^2$，不是除以 $A_v$；$\Isq{in}$ 則除以「轉阻」的平方。
+  \item \textbf{$V_{n,in}$ 與 $I_{n,in}$ 相關}：兩者同時作用（有限 $Z_S$）時不可直接把功率相加，要回到電壓疊加。
+  \item \textbf{不能對 $\Vsq{in}$ 直接積分}：輸入參考頻譜常是白的（積分發散），總雜訊要在\textbf{輸出}積分後再除以中頻增益平方（7.9 節）。
+  \item \textbf{$r_O$ 不產生雜訊}，但會影響轉移函數；題目給 $\lambda\neq0$ 時要用 $r_O$ 算輸出阻抗。
 \end{enumerate}
 \end{trapbox}
 
-\subsection{另一種方法：輸出短路雜訊電流}
-有時先求\textbf{輸出短路雜訊電流}較簡單，再乘輸出阻抗得輸出電壓，或除以 $G_m$ 得 $\Vsq{in}$。
-\exhead{7.13}{242}{含回授電阻 $R_F$ 的放大器（新電路、新方法：輸出短路電流法）}
+\exhead{7.13}{242}{含回授電阻 $R_F$ 的放大器（新電路、新方法：輸出短路電流法）\supp}
 \rfig{38}{0.6}{回授電阻 $R_F$ 的放大器（p.242）}
-條件：$I_1$ 無雜訊、$\lambda=0$。
+有時先求\textbf{輸出短路雜訊電流}較簡單，再除以轉導 $G_m$（或電流增益）即得輸入參考雜訊。條件：$I_1$ 無雜訊、$\lambda=0$。
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{求 $\Vsq{in}$}（輸入、輸出都短路，圖 b）：$R_F$ 兩端都是交流地，$\Isq{n1,out}=4kT/R_F+4kT\gamma g_m$。轉導 $G_m=I_{out}/V_{in}=g_m-1/R_F$（圖 c），
+  \item \textbf{求 $\Vsq{in}$}（輸入、輸出都短路，圖 b）：$R_F$ 兩端都是交流地，$\overline{I^2_{n1,out}}=4kT/R_F+4kT\gamma g_m$。轉導（圖 c）：$I_{out}=g_mV_{in}-V_{in}/R_F$，故 $G_m=g_m-1/R_F$，
   \[\Vsq{in}=\frac{4kT/R_F+4kT\gamma g_m}{(g_m-1/R_F)^2}\]
-  \item \textbf{求 $\Isq{in}$}（輸入開路，圖 d）：$V_{n,R_F}$ 直接調變 $V_{GS}$，$\Isq{n2,out}=4kTR_Fg_m^2+4kT\gamma g_m$；電流增益（圖 e）$I_{out}=(g_mR_F-1)I_{in}$，
+  \item \textbf{求 $\Isq{in}$}（輸入開路，圖 d）：$R_F$ 的雜訊電壓直接加在 $V_{GS}$ 上，$\overline{I^2_{n2,out}}=4kTR_Fg_m^2+4kT\gamma g_m$；電流增益（圖 e）：$I_{in}$ 流過 $R_F$ 使 $V_{GS}=I_{in}R_F$，$I_{out}=(g_mR_F-1)I_{in}$，
   \[\Isq{in}=\frac{4kTR_Fg_m^2+4kT\gamma g_m}{(g_mR_F-1)^2}\]
 \end{itemize}
-此電路輸入短路與開路時的輸出雜訊電壓不同（開路時 $\Vsq{n2,out}=4kT\gamma/g_m+4kTR_F$）。
+新觀察：此電路輸入短路與開路時的輸出雜訊不同，所以 $\Isq{in}$ 不可忽略（對照附錄 A：只有輸出雜訊幾乎不隨 $Z_S$ 改變的電路才能省掉 $I_{n,in}$）。
+
+\subsection{Lemma：汲極雜訊電流 $\Leftrightarrow$ 閘極雜訊電壓 \lec{21} \detail}
+\rfig{39}{0.7}{等效的兩個 CS 級（p.244）}
+\textbf{Lemma}：低頻下，若 $\overline{V_n^2}=\overline{I_n^2}/g_m^2$，則圖 (a)、(b) 兩電路對\textbf{任意} $Z_S$ 都等效。
+
+\textbf{證明}（講義手寫）：兩電路輸出阻抗相同，只需比較\textbf{輸出短路電流}（圖 c、d）。對 (c)，設源極電壓 $V_S$，則 $V_{gs}=-V_S$，且源極電流全部流過 $Z_S$：$V_S=I_{n,out}Z_S$。在汲極節點寫 KCL：
+\begin{align}
+I_{n,out}&=g_mV_{gs}-g_{mb}V_S-\frac{V_S}{r_O}+I_n=-\Big(g_m+g_{mb}+\frac1{r_O}\Big)V_S+I_n\\
+&=-\Big(g_m+g_{mb}+\frac1{r_O}\Big)Z_SI_{n,out}+I_n
+\ \Rightarrow\ I_{n,out1}=\frac{I_n}{Z_S(g_m+g_{mb}+1/r_O)+1}
+\end{align}
+同理 (d) 中 $V_n$ 相當於把 $V_{gs}$ 多加 $V_n$，得
+\[I_{n,out2}=\frac{g_mV_n}{Z_S(g_m+g_{mb}+1/r_O)+1}\]兩者相等 $\Leftrightarrow\boxed{V_n=I_n/g_m}$，與 $Z_S$ 無關。$V_n$ 稱為 $M_1$ 的\textbf{閘極參考雜訊}。
+
+\textbf{用法}：把每顆電晶體的雜訊直接寫成串在閘極的 $4kT\gamma/g_m+K/(C_{ox}WLf)$，再乘上「從那顆電晶體的閘極到輸出的增益」，是單級電路最快的解法。
+
+\exhead{7.14}{244}{用 Thevenin 等效證明 lemma \supp}
+\rfig{40}{0.7}{以 Thevenin 等效比較兩電路（p.245）}
+把 $Z_L$ 以外的部分化成 Thevenin 等效。$I_n=V_n=0$ 時兩電路相同，故 $Z_{Thev1}=Z_{Thev2}$，只需比較 Thevenin 電壓。求 Thevenin 電壓時 $Z_L$ 開路（圖 c），汲極沒有電流，$Z_S$ 上也沒有電流，所以 $V_{Thev1}=I_nr_O$、$V_{Thev2}=g_mV_nr_O$，同樣得 $V_n=I_n/g_m$。
 
 % =====================================================================
 \section{單級放大器的雜訊}
 
-\subsection{Lemma：汲極雜訊電流 $\Leftrightarrow$ 閘極雜訊電壓}
-\rfig{39}{0.7}{等效的 CS 級：電流源模型與閘極電壓源模型（p.244）}
-\textbf{Lemma}：低頻下，若 $\overline{V_n^2}=\overline{I_n^2}/g_m^2$，則 (a)、(b) 兩電路對\textbf{任意} $Z_S$ 都等效。
-
-\textbf{證明}：兩電路輸出阻抗相同，只需比較輸出短路電流（圖 c、d）。對 (c)：設源極電壓 $V_S$，汲極電流 $I_d=-V_S(g_m+g_{mb}+1/r_O)$，$V_S=Z_S(I_d+I_n)$，輸出短路電流 $I_{out}=I_d+I_n$，解得
-\begin{align}
-I_{n,out1}=\frac{I_n}{Z_S(g_m+g_{mb}+1/r_O)+1},\qquad I_{n,out2}=\frac{g_mV_n}{Z_S(g_m+g_{mb}+1/r_O)+1}
-\end{align}
-兩者相等 $\Leftrightarrow V_n=I_n/g_m$。$V_n$ 稱為 $M_1$ 的\textbf{閘極參考雜訊}。
-\exhead{7.14}{244}{用 Thevenin 等效證明 lemma}
-$Z_L$ 開路時 $Z_S$ 無電流，$V_{Thev1}=I_nr_O$、$V_{Thev2}=g_mV_nr_O$，同樣得 $V_n=I_n/g_m$。
-
-\textbf{用法}：把每顆電晶體的雜訊直接寫成串在閘極的 $4kT\gamma/g_m+K/(C_{ox}WLf)$，再「從那顆電晶體的閘極到輸出的增益」換算，是最快的解題法。（含 $C_{GS}$ 時見習題 7.29。）
-
-\subsection{Common-source 級：電晶體要放大就要 $g_m$ 大}
+\subsection{Common-source 級：放大用的電晶體要 $g_m$ 大 \lec{22}}
 \begin{align}
 \Vsq{in}=4kT\left(\frac{\gamma}{g_m}+\frac{1}{g_m^2R_D}\right)+\frac{K}{C_{ox}WL}\frac1f
 \end{align}
-電晶體放大閘極電壓信號時 $g_m$ 要最大化；當作定電流源時 $g_m$ 要最小化。
+電晶體放大閘極電壓訊號時 $g_m$ 要大；當定電流源時 $g_m$ 要小（課本圖 7.41）。降低雜訊的兩個方向與代價（講義手寫）：
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{提高 $I_D$ 或 $W$}：$g_m\uparrow$，代價是功耗、寄生電容與 headroom。代入 $g_m=2I_D/V_{ov}$：
+  \[\Vsq{in,th}=4kT\left[\frac{\gamma V_{ov}}{2I_D}+\frac{V_{ov}^2}{4I_D\cdot I_DR_D}\right]\]
+  固定 $I_DR_D$（headroom）與 $V_{ov}$（$W\propto I_D$）時，$I_D\uparrow\Rightarrow\Vsq{in}\downarrow$，代價是功耗。
+  \item \textbf{提高 $R_D$}：$\Vsq{in}\downarrow$，代價是 headroom 與速度下降。
+\end{enumerate}
 
-\exhead{7.15}{245}{電流源負載 CS 級的雜訊與 SNR（重要新觀察：$g_{m1}$ 大、$g_{m2}$ 小）}
+\exhead{7.15}{245}{電流源負載 CS 級的雜訊與輸出 SNR（重要新觀察：$g_{m1}$ 大、$g_{m2}$ 小）\lec{22--23}}
 \rfig{42}{0.5}{電流源負載 CS 級（p.246）}
 兩顆電晶體的雜訊電流都流過 $r_{O1}\parallel r_{O2}$：
 \begin{align}
 \Vsq{out}&=4kT\gamma(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})^2,\qquad A_v=g_{m1}(r_{O1}\parallel r_{O2})\\
 \Vsq{in}&=4kT\gamma\left(\frac{1}{g_{m1}}+\frac{g_{m2}}{g_{m1}^2}\right)
 \end{align}
-直觀：$g_{m1}$ 增加時輸出雜訊 $\propto\sqrt{g_{m1}}$、增益 $\propto g_{m1}$，所以輸入雜訊下降；$M_2$ 不放大信號，沒有這個好處。
+直觀：$g_{m1}\uparrow$ 時輸出雜訊電壓 $\propto\sqrt{g_{m1}}$、增益 $\propto g_{m1}$，所以輸入雜訊下降；$M_2$ 不放大訊號，沒有這個好處，因此希望 $g_{m2}$ 小。
 
-接上負載 $C_L$ 後積分（套用 $kT/C$ 結果）：
+\textbf{輸出 SNR}（講義 p.23）：接上 $C_L$ 後，輸出頻譜被 $r_{O1}\parallel r_{O2}$ 與 $C_L$ 低通，套用 $kT/C$ 的積分：
 \begin{align}
-\Vsq{out,tot}=\gamma(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})\frac{kT}{C_L},\qquad
-\text{SNR}_{out}=\frac{C_L}{2\gamma kT}\cdot\frac{g_{m1}^2(r_{O1}\parallel r_{O2})}{g_{m1}+g_{m2}}V_m^2
+\Vsq{out,tot}&=\int_0^\infty\frac{4kT\gamma(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})^2\,df}{1+(r_{O1}\parallel r_{O2})^2C_L^2(2\pi f)^2}=\gamma(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})\frac{kT}{C_L}\\
+\text{SNR}_{out}&=\frac{\left[g_{m1}(r_{O1}\parallel r_{O2})V_m/\sqrt2\right]^2}{\gamma(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})(kT/C_L)}=\frac{C_L}{2\gamma kT}\cdot\frac{g_{m1}^2(r_{O1}\parallel r_{O2})}{g_{m1}+g_{m2}}V_m^2
 \end{align}
-要提高 SNR 就要加大 $C_L$（縮小頻寬）：寬頻與低雜訊難以兼得。
+$C_L\uparrow\Rightarrow$ SNR$\uparrow$ 但頻寬$\downarrow$：寬頻又低雜訊的電路很難設計。
 
-\exhead{7.16}{247}{互補 CS 級（新電路）}
-輸出雜訊同\exref{7.15}，但增益變成 $(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})$：
+\exhead{7.16}{247}{互補 CS 級（新電路）\supp}
+\rfig{43}{0.12}{互補 CS 級（p.247）}
+輸入設為零時，輸出雜訊與 \exref{7.15} 相同；但兩顆都在放大輸入，增益變成 $(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})$：
 \begin{align}
 \boxed{\Vsq{in}=\frac{4kT\gamma}{g_{m1}+g_{m2}}}
 \end{align}
-因為 $M_2$ 也在放大輸入，兩顆的轉導相加，好比並聯。
+好比兩顆並聯、轉導相加。比電流源負載 CS 低雜訊的原因：$M_2$ 一樣注入雜訊，但在這裡它同時也是轉導元件、會放大訊號。
 
-\textbf{電阻負載 CS 的取捨}：代入 $g_m=2I_D/(V_{GS}-V_{TH})$，
-\begin{align}
-\Vsq{in}=4kT\left[\frac{\gamma(V_{GS}-V_{TH})}{2I_D}+\frac{(V_{GS}-V_{TH})^2}{4I_D\cdot I_DR_D}\right]
-\end{align}
-固定壓降 $I_DR_D$ 與 overdrive（$W\propto I_D$）時，增加 $I_D$ 就降低雜訊，代價是功耗。
-
-\exhead{7.17}{247}{電流源負載再並聯 $R_D$ 的 CS 級（含 $1/f$）}
+\exhead{7.17}{247}{電流源負載再並聯 $R_D$ 的 CS 級（含 $1/f$）\supp}
 \rfig{44}{0.5}{電流源負載與電阻並聯（p.247）}
-$M_2$ 閘極雜訊經增益 $g_{m2}(R_D\parallel r_{O1}\parallel r_{O2})$ 到輸出，再除以主增益 $g_{m1}(R_D\parallel r_{O1}\parallel r_{O2})$：
+$M_2$ 的閘極雜訊經 $g_{m2}(R_D\parallel r_{O1}\parallel r_{O2})$ 到輸出，再除以主增益 $g_{m1}(R_D\parallel r_{O1}\parallel r_{O2})$：
 \begin{align}
 \Vsq{in}=4kT\gamma\left(\frac{1}{g_{m1}}+\frac{g_{m2}}{g_{m1}^2}\right)+\frac{1}{C_{ox}f}\left[\frac{K_N}{(WL)_1}+\frac{K_Pg_{m2}^2}{(WL)_2g_{m1}^2}\right]+\frac{4kT}{g_{m1}^2R_D}
 \end{align}
 $R_D=\infty$ 時退化成\exref{7.15}，$g_{m2}=0$ 時退化成電阻負載 CS。
 
-\textbf{低雜訊 CS 設計方向}：熱雜訊靠提高 $g_{m1}$（$I_D$ 或 $W$，代價為功耗、擺幅、電容）、提高 $R_D$（代價為 headroom、速度）；$1/f$ 雜訊靠加大面積 $WL$（固定 $W/L$ 時 $g_m$ 不變但電容變大）。
+\exhead{7.18}{248}{flicker 雜訊電流「與 $W$ 無關」？（觀念陷阱）\supp}
+把汲極 $1/f$ 雜訊電流寫成 $\frac{K}{WLC_{ox}f}\cdot2\mu_nC_{ox}\frac WL I_D=\frac{2K\mu_nI_D}{L^2f}$，就會誤以為與 $W$ 無關。公平比較要同時固定 $I_D$ \textbf{與} overdrive（否則 headroom 也變了），應寫成 $\frac{K}{WLC_{ox}f}\cdot\frac{4I_D^2}{V_{ov}^2}$，可見面積越大雜訊越小。
 
-\exhead{7.18}{248}{flicker 雜訊電流「與 $W$ 無關」？（觀念陷阱）}
-把 $1/f$ 汲極電流寫成 $\frac{K}{WLC_{ox}f}\cdot2\mu_nC_{ox}\frac WL I_D=\frac{2K\mu_nI_D}{L^2f}$ 而得出「與 $W$ 無關」是錯的。公平比較要固定 $I_D$ \textbf{與} overdrive，應寫成 $\frac{K}{WLC_{ox}f}\frac{4I_D^2}{(V_{GS}-V_{TH})^2}$，可見面積越大雜訊越小。
-
-\exhead{7.19}{248}{電阻負載 CS 級的雜訊設計（設計題）}
+\exhead{7.19}{248}{電阻負載 CS 級的雜訊設計（設計題）\supp}
 \rfig{45}{0.5}{CS 級的總雜訊設計（p.249）}
-規格為總輸入參考雜訊 $100\,\mu\text{V}_{\text{rms}}$、功耗 1\,mW、頻寬 1\,GHz（由 $R_D$ 與 $C_L$ 決定）、$V_{DD}=1$\,V。輸出雜訊與積分：
+規格：總輸入參考雜訊 $100\,\mu\text{V}_{\text{rms}}$、功耗 1\,mW、頻寬 1\,GHz（由 $R_D$ 與 $C_L$ 決定）、$V_{DD}=1$\,V，忽略 $\lambda$ 與 $1/f$。
 \begin{align}
 \Vsq{out}&=(1+\gamma g_mR_D)\frac{4kTR_D}{R_D^2C_L^2\omega^2+1}\ \Rightarrow\ \Vsq{out,tot}=(1+\gamma g_mR_D)\frac{kT}{C_L}\\
 \Vsq{in,tot}&=\frac{1+\gamma g_mR_D}{g_m^2R_D^2}\cdot\frac{kT}{C_L}=\frac{1+\gamma g_mR_D}{g_m^2R_D}\cdot2\pi kT\cdot\underbrace{\frac{1}{2\pi R_DC_L}}_{1\,\text{GHz}}=(100\,\mu\text{V})^2\\
 &\Rightarrow\ \frac1{g_m}\left(\frac{1}{g_mR_D}+\gamma\right)=\frac{(100\,\mu\text{V})^2}{2\pi kT\times1\,\text{GHz}}=384\,\Omega
 \end{align}
-取 $g_mR_D=3$、$\gamma=1$：$1/g_m=288\,\Omega$、$R_D=864\,\Omega$；$I_D=1$\,mA 時 $I_DR_D=864$\,mV，只剩 $V_{DS}=136$\,mV，擺幅很小（可試 $g_mR_D=2$ 或 4 比較 headroom）。
+取 $g_mR_D=3$、$\gamma=1$：$1/g_m=288\,\Omega$、$R_D=864\,\Omega$；$I_D=1$\,mA 時 $I_DR_D=864$\,mV，只剩 $V_{DS}=136$\,mV，擺幅很小（可改試 $g_mR_D=2$ 或 4 比較 headroom）。
 
-\subsection{Common-gate 級：負載雜訊直接成為輸入雜訊電流}
+\subsection{Common-gate 級：負載雜訊直接成為輸入雜訊電流 \lec{24}}
 \begin{center}
 \includegraphics[width=0.36\linewidth]{../fig/ch7/fig7_46.png}\hspace{1em}
 \includegraphics[width=0.56\linewidth]{../fig/ch7/fig7_47.png}\\[0.1em]
 {\small\sffamily 圖 7.46\quad CG 級與雜訊源\qquad 圖 7.47\quad (a)(b) 短路求 $\Vsq{in}$；(c)(d) 開路求 $\Isq{in}$（p.250）}
 \end{center}
-CG 輸入阻抗低，\textbf{即使低頻 $\Isq{in}$ 也不可忽略}。
+CG 輸入阻抗低，\textbf{即使在低頻 $\Isq{in}$ 也不可忽略}。
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{輸入短路}：$\left(4kT\gamma g_m+\frac{4kT}{R_D}\right)R_D^2=\Vsq{in}(g_m+g_{mb})^2R_D^2$
+  \item \textbf{輸入短路}：$\left(4kT\gamma g_m+\frac{4kT}{R_D}\right)R_D^2=\Vsq{in}(g_m+g_{mb})^2R_D^2$，
   \[\Vsq{in}=\frac{4kT(\gamma g_m+1/R_D)}{(g_m+g_{mb})^2}\]
-  \item \textbf{輸入開路}：源極節點 KCL 給 $I_{n1}+I_{D1}=0$，$M_1$ 自己的雜訊電流在內部循環，對輸出\textbf{沒有貢獻}；輸出雜訊只剩 $4kTR_D$，
-  \[\boxed{\Isq{in}=\frac{4kT}{R_D}}\]
+  \item \textbf{輸入開路} \detail：源極節點沒有其他路徑，KCL 給 $I_{n1}+I_{D1}=0$，也就是 $M_1$ 的雜訊電流只在元件內部循環，\textbf{對輸出沒有貢獻}；輸出雜訊只剩 $4kTR_D$。令 $\Isq{in}$（全部流過 $M_1$ 到 $R_D$，電流增益 1）產生同樣的輸出：
+  \[\Isq{in}R_D^2=4kTR_D\ \Rightarrow\ \boxed{\Isq{in}=\frac{4kT}{R_D}}\]
 \end{itemize}
 \textbf{缺點}：CG 沒有電流增益，負載的雜訊電流被原封不動地參考回輸入。
 
+\subsection{偏壓電流源的雜訊 \lec{25}}
 \rfig{48}{0.3}{偏壓電流源 $M_2$ 的雜訊（p.251）}
-\textbf{偏壓電流源的雜訊}（圖 7.48）：輸入短路時 $M_2$ 的雜訊電流不流過 $R_D$，對 $\Vsq{in}$ 無貢獻；輸入開路時全部流經 $M_1$、$R_D$，所以 $\overline{I^2_{n2}}$ \textbf{直接加到 $\Isq{in}$}。要讓 $g_{m2}$ 小，但 $g_{m2}=2I_{D2}/(V_{GS2}-V_{TH2})$，給定電流時需大 overdrive，會吃掉 $V_b$ 與輸出擺幅。
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{輸入短路}：$M_2$ 的雜訊電流被短路到地，不流過 $R_D$，對 $\Vsq{in}$ 無貢獻。
+  \item \textbf{輸入開路}：$I_{n2}$ 全部流經 $M_1$、$R_D$，所以 $\overline{I^2_{n2}}$ \textbf{直接加到 $\Isq{in}$}。
+\end{itemize}
+要讓 $g_{m2}=2I_{D2}/V_{ov2}$ 小，給定電流時需大 overdrive，會吃掉 $V_b$ 的空間並限制輸出擺幅。$M_0$ 的雜訊由 $C_0$ 濾掉（講義手寫）。
 
-\exhead{7.20}{251}{PMOS 電流源負載的 CG 級（新電路）}
-\rfig{49}{0.3}{PMOS 電流源負載的 CG 級（p.251）}
-全部電晶體飽和：
-\begin{align}
-\Vsq{in}=4kT\gamma\frac{g_{m1}+g_{m3}}{(g_{m1}+g_{mb1})^2},\qquad
-\Isq{in}=4kT\gamma(g_{m2}+g_{m3})
-\end{align}
-（$M_3$ 的雜訊電流參考到輸入時，在 $g_mr_O\gg1$ 下 $I_{n,in}|_{M3}\approx I_{n3}$。）兩者都正比於\textbf{電流源}電晶體的 $g_m$。
+\exhead{7.20}{251}{PMOS 電流源負載的 CG 級：熱雜訊與 flicker 雜訊 \lec{26}}
+\begin{center}
+\includegraphics[width=0.28\linewidth]{../fig/ch7/fig7_49.png}\hspace{2em}
+\includegraphics[width=0.22\linewidth]{../fig/ch7/fig7_50.png}\\[0.1em]
+{\small\sffamily 圖 7.49\quad 電路（p.251）\qquad 圖 7.50\quad 各管 $1/f$ 雜訊串在閘極（p.252）}
+\end{center}
+講義 p.26 只列 flicker 雜訊；課本例題先算熱雜訊，這裡一併整理。全部飽和，忽略 $M_0$、$M_4$ 的雜訊。
 
-\textbf{CG 的 $1/f$ 雜訊}（圖 7.50，各管 $1/f$ 雜訊以閘極電壓源表示）：
+\textbf{熱雜訊} \supp：
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{輸入短路}：$M_2$ 被短路，$M_1$、$M_3$ 的雜訊電流流過 $r_{O1}\parallel r_{O3}$，增益約 $(g_{m1}+g_{mb1})(r_{O1}\parallel r_{O3})$：
+  \[\Vsq{in}=4kT\gamma\frac{g_{m1}+g_{m3}}{(g_{m1}+g_{mb1})^2}\]
+  \item \textbf{輸入開路}：$M_2$ 的雜訊電流直接加到輸入；$M_3$ 的雜訊參考回輸入時，在任何 $g_mr_O\gg1$ 下 $I_{n,in}|_{M3}\approx I_{n3}$；$M_1$ 的雜訊因源極看到 $r_{O2}$ 這麼大的退化而可忽略。
+  \[\Isq{in}=4kT\gamma(g_{m2}+g_{m3})\]
+\end{itemize}
+兩者都正比於\textbf{電流源}電晶體的 $g_m$。
+
+\textbf{Flicker 雜訊}（講義 p.26）：輸入短路時，$M_1$、$M_3$ 的閘極源經各自的轉導到輸出，再除以增益 $(g_{m1}+g_{mb1})(r_{O1}\parallel r_{O3})$；輸入開路時 $M_1$ 因 $r_{O2}$ 很大而無貢獻，$M_2$、$M_3$ 的閘極源各乘 $g_m$ 成為輸入電流：
 \begin{align}
 \Vsq{in}=\frac{1}{C_{ox}f}\left[\frac{g_{m1}^2K_N}{(WL)_1}+\frac{g_{m3}^2K_P}{(WL)_3}\right]\frac{1}{(g_{m1}+g_{mb1})^2},\qquad
 \Isq{in}=\frac{1}{C_{ox}f}\left[\frac{g_{m2}^2K_N}{(WL)_2}+\frac{g_{m3}^2K_P}{(WL)_3}\right]
 \end{align}
-分別加到上面的熱雜訊結果即為總雜訊。
+總雜訊為熱雜訊與 flicker 雜訊相加。
 
-\subsection{Source follower：增益小於 1 卻加雜訊}
+\subsection{Source follower：增益小於 1 卻加雜訊 \lec{27}}
 \rfig{51}{0.45}{(a) Source follower；(b) 含雜訊源（p.253）}
-輸入阻抗高，通常忽略 $\Isq{in}$。$M_2$ 的雜訊電流看到 $\frac1{g_{m1}}\parallel\frac1{g_{mb1}}\parallel r_{O1}\parallel r_{O2}$，除以 $A_v^2$ 後：
+輸入阻抗高，通常忽略 $\Isq{in}$。$M_2$ 的雜訊電流看到的阻抗是 $R_{out}=\frac1{g_{m1}}\parallel\frac1{g_{mb1}}\parallel r_{O1}\parallel r_{O2}$：
+\begin{align}
+\Vsq{out}|_{M2}=\overline{I^2_{n2}}\left(\frac1{g_{m1}}\Big\|\frac1{g_{mb1}}\Big\|r_{O1}\|r_{O2}\right)^2,\qquad
+A_v=\frac{\frac1{g_{mb1}}\|r_{O1}\|r_{O2}}{\frac1{g_{mb1}}\|r_{O1}\|r_{O2}+\frac1{g_{m1}}}<1
+\end{align}
+$A_v^2$ 的分母正好讓 $R_{out}^2/A_v^2=1/g_{m1}^2$，故
 \begin{align}
 \Vsq{in}=\overline{V^2_{n1}}+\frac{\Vsq{out}|_{M2}}{A_v^2}=4kT\gamma\left(\frac1{g_{m1}}+\frac{g_{m2}}{g_{m1}^2}\right)
 \end{align}
-形式與電流源負載 CS 相同。由於只會加雜訊而增益 $<1$，低雜訊放大鏈中盡量避免 SF。
+形式與電流源負載 CS 相同。只加雜訊、增益又小於 1，所以\textbf{低雜訊放大鏈中盡量避免 SF}。
 
-\subsection{Cascode 級：低頻時 cascode 管幾乎不貢獻}
+\subsection{Cascode 級：低頻時 cascode 管幾乎不貢獻 \lec{28} \detail}
 \rfig{52}{0.5}{(a) Cascode；(b)(c) $M_2$ 的雜訊模型（p.254）}
-低頻下 $M_1$、$R_D$ 的貢獻與 CS 相同：$\Vsq{in}=4kT\left(\frac{\gamma}{g_{m1}}+\frac{1}{g_{m1}^2R_D}\right)$。$M_2$：若忽略 $M_1$ 的 $\lambda$，$I_{n2}+I_{D2}=0$，對輸出無貢獻；換成閘極電壓源看，節點 $X$ 阻抗很大，$V_{n2}$ 到輸出增益很小（就像源極退化很大的 CS）。
+低頻下 $M_1$、$R_D$ 的貢獻與 CS 相同：$\Vsq{in}|_{M1,R_D}=4kT\left(\frac{\gamma}{g_{m1}}+\frac{1}{g_{m1}^2R_D}\right)$。
 
-\textbf{高頻}：$X$ 點電容 $C_X$ 使 $\frac{V_{n,out}}{V_{n2}}\approx\frac{-R_D}{1/g_{m2}+1/(C_Xs)}$ 上升，同時 $C_X$ 分流 $M_1$ 的信號電流、降低主增益，所以 cascode 的輸入參考雜訊在高頻可能明顯惡化。
+\textbf{$M_2$ 為何可忽略}（講義手寫）：
+\begin{itemize}[leftmargin=2em]
+  \item 電流源觀點（圖 b）：若 $r_{O1}=\infty$，$X$ 點只能流 $M_1$ 的電流，$I_{n2}+I_{D2}=0$，$M_2$ 的雜訊電流在內部循環，輸出雜訊為零。
+  \item 電壓源觀點（圖 c）：$M_2$ 相當於源極退化 $r_{O1}$ 的 CS 級，等效轉導 $g_{m,eff}=\dfrac{g_{m2}}{1+g_{m2}r_{O1}}$，
+  \[\frac{V_{n,out}}{V_{n2}}=\frac{g_{m2}R_D}{1+g_{m2}r_{O1}}\approx\frac{R_D}{r_{O1}}\ll1\]
+  （若負載是 PMOS cascode 這類大阻抗，$R_D\sim g_mr_O^2$，此增益約 $g_mr_O$，就不能忽略。）
+\end{itemize}
+\textbf{高頻}：$X$ 點電容 $C_X$ 讓 $V_{n2}$ 到輸出的增益變成 $\frac{V_{n,out}}{V_{n2}}\approx\frac{-R_D}{1/g_{m2}+1/(C_Xs)}$，隨頻率上升；同時 $C_X$ 分流 $M_1$ 的訊號電流、主增益下降。兩者疊加，cascode 的輸入參考雜訊在高頻會明顯惡化。
 
 % =====================================================================
-\section{電流鏡的雜訊：二極體接法元件的 $1/f$ 雜訊會被放大 $N$ 倍}
+\section{電流鏡的雜訊：二極體接法元件的雜訊被放大 $N$ 倍}
+\subsection{以 $C_B$ 濾除 $M_{REF}$ 的雜訊 \lec{29}}
 \rfig{53}{0.72}{(a) 以 $C_B$ 抑制 $M_{REF}$ 雜訊的電流鏡；(b) 小訊號模型；(c) 等效電路（p.255）}
-$(W/L)_1=N(W/L)_{REF}$。$M_{REF}$ 與其雜訊的 Thevenin 等效：開路電壓 $V_{n,REF}$（因 $I_{REF}$ 為理想電流源，$V_1$ 必為 0），內阻 $1/g_{m,REF}$。與 $C_B$ 成低通後和 $V_{n1}$ 一起驅動 $M_1$：
+$(W/L)_1=N(W/L)_{REF}$。$M_{REF}$ 與其雜訊的 Thevenin 等效 \detail：開路電壓就是 $V_{n,REF}$（$I_{REF}$ 為理想電流源，圖 b 中 $g_{m,REF}V_1$ 必須為零，即 $V_1=0$），內阻 $1/g_{m,REF}$。它與 $C_B$ 構成低通，$X$ 點電壓
+\begin{align}
+V_X=\frac{1/(sC_B)}{1/g_{m,REF}+1/(sC_B)}V_{n,REF}=\frac{g_{m,REF}}{g_{m,REF}+sC_B}V_{n,REF}
+\end{align}
+與 $M_1$ 自己的 $V_{n1}$ 一起驅動 $M_1$：
 \begin{align}
 \Isq{out}=\left(\frac{g_{m,REF}^2}{C_B^2\omega^2+g_{m,REF}^2}\overline{V^2_{n,REF}}+\overline{V^2_{n1}}\right)g_{m1}^2
 \end{align}
-同 $L$ 時面積比為 $N$，$\overline{V^2_{n,REF}}=N\overline{V^2_{n1}}$，故
+同 $L$ 時面積比為 $N$，$1/f$ 雜訊 $\propto1/(WL)$，故 $\overline{V^2_{n,REF}}=N\overline{V^2_{n1}}$：
 \begin{align}
 \Isq{out}=\left(\frac{N\,g_{m,REF}^2}{C_B^2\omega^2+g_{m,REF}^2}+1\right)g_{m1}^2\overline{V^2_{n1}},\qquad
 \text{可忽略條件：}\ \boxed{C_B^2\gg\frac{(N-1)g_{m,REF}^2}{\omega^2}}
 \end{align}
-數值（課本）：$N=5$、$g_{m,REF}=1/(200\,\Omega)$、最低頻 1\,MHz $\Rightarrow C_B\gg1.59$\,nF；要十倍抑制需 5.03\,nF，晶片上不切實際。
+數值（課本）：$N=5$、$g_{m,REF}=1/(200\,\Omega)$、最低頻 1\,MHz $\Rightarrow C_B\gg1.59$\,nF；要十倍抑制需 5.03\,nF，晶片上不切實際（講義：$C_B\sim$\,nF）。
 
-\rfig{54}{0.5}{(a) 在閘極串 $R_B$ 降低截止頻率；(b) 以 MOS $M_R$ 實現大電阻（p.256）}
-\textbf{改善}：串入 $R_B$，截止頻率降為 $[(1/g_{m,REF}+R_B)C_B]^{-1}$，
+\subsection{串入 $R_B$ 降低截止頻率 \lec{30}}
+\rfig{54}{0.5}{(a) 在閘極串 $R_B$；(b) 以 MOS $M_R$ 實現大電阻（p.256）}
+截止頻率降為 $\omega_c=\dfrac{g_{m,REF}}{(1+g_{m,REF}R_B)C_B}=\dfrac{1}{(R_B+1/g_{m,REF})C_B}$：
 \begin{align}
 \Isq{out}=\left[\frac{g_{m,REF}^2}{(1+g_{m,REF}R_B)^2C_B^2\omega^2+g_{m,REF}^2}\left(\overline{V^2_{n,REF}}+\overline{V^2_{n,R_B}}\right)+\overline{V^2_{n1}}\right]g_{m1}^2
 \end{align}
-$R_B$ 本身有熱雜訊，但在其熱雜訊接近 $M_{REF}$ 的 $1/f$ 雜訊之前可以做得很大；上限由 $R_B$ 與 $C_B$ 的面積取捨決定（以及閘極漏電流造成的 dc 誤差）。實作上用小 overdrive 的 MOS $M_R$（窄長），$M_C$ 寬短。
+$R_B$ 本身有熱雜訊，但只要 $\overline{V^2_{n,R_B}}$ 仍小於 $M_{REF}$ 的 $1/f$ 雜訊，就能把 $R_B$ 做得很大；上限還受閘極漏電流造成的 dc 誤差限制。實作上 $R_B$ 用小 overdrive 的 MOS $M_R$（$L$ 大、$W$ 小），並用 $M_C$（$L$ 小、$W$ 大）提供偏壓。
 
 % =====================================================================
 \section{差動對的雜訊：輸入參考雜訊功率是 CS 的 2 倍}
 
-\subsection{電阻負載差動對}
-\rfig{56}{0.55}{差動對輸入參考雜訊的計算（p.257）}
-低頻時 $\Isq{in}$ 可忽略。$I_{n1}$ 與 $I_{n2}$ 不相關，$P$ 點\textbf{不是}虛接地，不能用半電路，只能逐一計算。由圖 (c)(d)，$I_{n1}$ 一半流經 $R_{D1}$、一半流經 $M_2$ 與 $R_{D2}$（同源、相關，電壓直接相加）：
+\subsection{電阻負載差動對 \lec{31--33} \detail}
+\rfig{56}{0.55}{差動對可視為二埠電路；輸入參考雜訊的計算（p.257）}
+差動對可視為差動輸入、差動輸出的二埠電路；輸入阻抗高，低頻時 $\Isq{in}$ 可忽略。$I_{n1}$ 與 $I_{n2}$ 不相關，$P$ 點\textbf{不是}虛接地（雜訊源不是差動訊號），不能用半電路，只能逐一計算（忽略 $r_O$）。
+
+\textbf{$I_{n1}$ 的分流}（講義手寫）：兩管 $V_{GS}$ 相同（閘極接地、源極相連），故 $g_m v_{gs1}=g_mv_{gs2}=g_mv_{gs}$。$P$ 點 KCL：$M_1$ 的總電流與 $M_2$ 的電流必須互相抵消（尾電流源對雜訊開路），
+\begin{align}
+g_mv_{gs}+I_{n1}=-g_mv_{gs}\ \Rightarrow\ g_mv_{gs}=-\frac{I_{n1}}{2}
+\end{align}
+所以 $I_{n1}$ 一半流經 $R_{D1}$、一半經 $M_2$ 流經 $R_{D2}$，兩端電壓反相，差動輸出為兩者相加（同源，電壓相加）：
 \begin{align}
 V_{n,out}|_{M1}&=\frac{I_{n1}}{2}R_{D1}+\frac{I_{n1}}{2}R_{D2}\ \xrightarrow{R_{D1}=R_{D2}=R_D}\ \Vsq{out}|_{M1}=\overline{I^2_{n1}}R_D^2\\
 \Vsq{out}&=\left(\overline{I^2_{n1}}+\overline{I^2_{n2}}\right)R_D^2+2(4kTR_D)=8kT(\gamma g_mR_D^2+R_D)\\
 \Vsq{in}&=\frac{\Vsq{out}}{g_m^2R_D^2}=\boxed{8kT\left(\frac{\gamma}{g_m}+\frac{1}{g_m^2R_D}\right)}
 \end{align}
 \rfig{57}{0.36}{用 lemma：每管雜訊串在閘極（p.258）}
-用 lemma 更快：兩管各串 $4kT\gamma/g_m$，$R_{D1}$、$R_{D2}$ 的雜訊各除以 $g_m^2R_D^2$，直接得到上式。加入 $1/f$：
+\textbf{用 lemma 更快} \lec{32}：兩管各串 $\overline{V^2_{n1}}=\overline{V^2_{n2}}=4kT\gamma/g_m$，$R_{D1}$、$R_{D2}$ 的雜訊各除以 $g_m^2R_D^2$，直接得到上式。加入 $1/f$：
 \begin{align}
-\Vsq{in,tot}=8kT\left(\frac{\gamma}{g_m}+\frac{1}{g_m^2R_D}\right)+\frac{2K}{C_{ox}WL}\frac1f
+\Vsq{in,tot}=8kT\left(\frac{\gamma}{g_m}+\frac{1}{g_m^2R_D}\right)+\frac{2K}{C_{ox}WL}\frac1f=2\,\Vsq{in,CS}
 \end{align}
-\textbf{結論}：每管 $g_m$ 相同時，差動對的輸入參考雜訊電壓是 CS 的 $\sqrt2$ 倍（訊號路徑上元件數加倍）；且同尺寸下功耗也是 2 倍。一般而言，\textbf{全差動電路的 $\Vsq{in}$ = 半電路的 2 倍}。
+\textbf{結論}：每管 $g_m$ 相同時，差動對的輸入參考雜訊\textbf{功率}是 CS 的 2 倍（電壓為 $\sqrt2$ 倍），因為訊號路徑上的元件數加倍；一般而言，\textbf{全差動電路的 $\Vsq{in}$ = 半電路的 2 倍}。
 
-\textbf{尾電流雜訊}：輸入差動為零且完全對稱時，$I_{SS}$ 雜訊平分到兩邊，只產生共模雜訊。偏離平衡時 $\Delta I_{D1}-\Delta I_{D2}\approx g_{m0}\left(1+\frac{I_n}{2I_{SS}}\right)\Delta V_{in}$，雜訊調變轉導而產生少量差動雜訊，通常可忽略。
+\subsection{尾電流源的雜訊 \lec{34} \detail}
+\rfig{55}{0.7}{尾電流源雜訊的影響（p.258）}
+輸入差動為零且完全對稱時，$I_{SS}$ 的雜訊平分到兩邊，只產生共模雜訊。輸入有小差動 $\Delta V_{in}$ 時，雜訊 $I_n$ 會\textbf{調變每顆電晶體的轉導}：
+\begin{align}
+\Delta I_{D1}-\Delta I_{D2}&=g_m\Delta V_{in}=\sqrt{2\mu_nC_{ox}\frac WL\cdot\frac{I_{SS}+I_n}{2}}\;\Delta V_{in}
+=\sqrt{2\mu_nC_{ox}\frac WL\cdot\frac{I_{SS}}{2}}\sqrt{1+\frac{I_n}{I_{SS}}}\;\Delta V_{in}\\
+&\approx g_{m0}\left(1+\frac{I_n}{2I_{SS}}\right)\Delta V_{in}\qquad(\text{用 }\sqrt{1+x}\approx1+x/2,\ I_n\ll I_{SS})
+\end{align}
+雜訊項 $g_{m0}\frac{I_n}{2I_{SS}}\Delta V_{in}$ 與 $\Delta V_{in}$ 成正比、且 $I_n\ll I_{SS}$，通常可忽略。
 
-\exhead{7.21}{259}{差動對做成浮接大電阻（新電路）}
-次臨界偏壓的差動對可做成 $\approx2/g_{m1}$ 的浮接電阻，其雜訊：$\overline{V^2_{n,AB}}=8kT\gamma(g_{m1}+g_{m3})\frac1{g_{m1}^2}+\frac{2K}{(WL)_1C_{ox}f}+\frac{2K}{(WL)_3C_{ox}f}\left(\frac{g_{m3}}{g_{m1}}\right)^2$，比同值歐姆電阻更吵，也更不線性。
+\exhead{7.21}{259}{次臨界差動對做成浮接大電阻（新電路）\supp}
+\rfig{58}{0.42}{(a) 電流源負載差動對做成浮接電阻；(b) 半電路（p.259）}
+把 $M_1$、$M_2$ 偏在極小電流，$A$、$B$ 之間呈現約 $1/g_{m1}+1/g_{m2}=2/g_{m1}$ 的大增量電阻。用半電路（圖 b）求 $A$ 點的 Thevenin 雜訊：$M_1$ 是二極體接法、阻抗 $1/g_{m1}$，$M_1$、$M_3$ 的雜訊電流都流過它；$M_3$ 的 $1/f$ 閘極源乘 $g_{m3}/g_{m1}$：
+\begin{align}
+\overline{V^2_{n,A}}&=(4kT\gamma g_{m1}+4kT\gamma g_{m3})\frac{1}{g_{m1}^2}+\frac{K}{(WL)_1C_{ox}f}+\frac{K}{(WL)_3C_{ox}f}\left(\frac{g_{m3}}{g_{m1}}\right)^2\\
+\overline{V^2_{n,AB}}&=2\overline{V^2_{n,A}}=8kT\gamma(g_{m1}+g_{m3})\frac{1}{g_{m1}^2}+\frac{2K}{(WL)_1C_{ox}f}+\frac{2K}{(WL)_3C_{ox}f}\left(\frac{g_{m3}}{g_{m1}}\right)^2
+\end{align}
+新觀察：同阻值（$2/g_{m1}$）的歐姆電阻只有 $4kT\cdot2/g_{m1}=8kT/g_{m1}$，這個「電阻」多了 $\gamma$、$M_3$ 與 $1/f$ 的貢獻，所以更吵，也更不線性。
 
-\subsection{電流源負載差動對}
-\exhead{7.22}{260}{電流源負載差動對的輸入參考雜訊（新電路、新方法）}
+\exhead{7.22}{260}{電流源負載差動對的輸入參考雜訊（新電路、新方法）\supp}
 \rfig{59}{0.5}{(a) 電流源負載差動對；(b) 雜訊源；(c) $M_3$ 雜訊電流的分流（p.260）}
-$M_1$、$M_2$ 的雜訊已是輸入串聯源，只需把 $M_3$、$M_4$ 參考到輸入。$M_3$ 的雜訊電流分流到 $r_{O3}$ 與看入 $M_1$ 汲極的 $R_X=r_{O4}+2r_{O1}$：
+$M_1$、$M_2$ 的雜訊已是輸入串聯源，只需把 $M_3$、$M_4$ 參考到輸入。$M_3$ 的雜訊電流 $g_{m3}V_{n3}$ 分流到 $r_{O3}$ 與看入 $M_1$ 汲極的 $R_X=r_{O4}+2r_{O1}$：
 \begin{align}
 I_{nA}=g_{m3}V_{n3}\frac{r_{O4}+2r_{O1}}{2r_{O4}+2r_{O1}},\qquad I_{nB}=g_{m3}V_{n3}\frac{r_{O3}}{2r_{O4}+2r_{O1}}
 \end{align}
-$V_{nXY}=V_{nX}-V_{nY}=g_{m3}V_{n3}\dfrac{r_{O3}r_{O1}}{r_{O3}+r_{O1}}$，即 $M_3$ 的雜訊電流乘上 $r_{O1}\parallel r_{O3}$（也可用把 $V_{n3}$ 拆成兩個差動分量再用半電路驗證）。$M_4$ 同理，功率相加後除以 $g_{m1}^2(r_{O1}\parallel r_{O3})^2$：
+$V_{nX}=-I_{nA}r_{O3}$、$V_{nY}=I_{nB}r_{O4}$，相減（$V_{nY}$ 要從 $V_{nX}$ 減掉）得
+\begin{align}
+V_{nXY}=V_{nX}-V_{nY}=g_{m3}V_{n3}\frac{r_{O3}r_{O1}}{r_{O3}+r_{O1}}
+\end{align}
+即 $M_3$ 的雜訊電流乘上 $r_{O1}\parallel r_{O3}$。
+\rfig{60}{0.62}{另一種看法：把 $V_{n3}$ 拆成兩個差動分量，再用半電路（p.261）}
+\textbf{新方法}：雖然雜訊是隨機的，但只有一個雜訊源時可以暫時把它當成確定性訊號，拆成 $\pm V_{n3}/2$ 的差動分量施加在 $M_3$、$M_4$ 閘極，再用半電路，得到相同結果。$M_4$ 同理，功率相加後除以 $g_{m1}^2(r_{O1}\parallel r_{O3})^2$：
 \begin{align}
 \Vsq{in}=2\overline{V^2_{n1}}+2\frac{g_{m3}^2}{g_{m1}^2}\overline{V^2_{n3}}
 =8kT\gamma\left(\frac1{g_{m1}}+\frac{g_{m3}}{g_{m1}^2}\right)+\frac{2K_N}{C_{ox}(WL)_1f}+\frac{2K_P}{C_{ox}(WL)_3f}\frac{g_{m3}^2}{g_{m1}^2}
 \end{align}
 
-\subsection{五電晶體 OTA}
-\begin{center}
-\includegraphics[width=0.28\linewidth]{../fig/ch7/fig7_61.png}\hspace{2em}
-\includegraphics[width=0.24\linewidth]{../fig/ch7/fig7_62.png}\\[0.1em]
-{\small\sffamily 圖 7.61\quad 輸出短路雜訊電流\qquad 圖 7.62\quad 尾電流雜訊的影響（p.262）}
-\end{center}
-因不對稱，改求 Norton 等效（輸出短路電流）。OTA 的 $G_m\approx g_{m1,2}$：
+\subsection{五電晶體 OTA \lec{35} \detail}
+\rfig{61}{0.28}{求輸出短路雜訊電流（p.262）}
+OTA 不對稱，改求 Norton 等效（輸出短路電流 $\Isq{out}$），再乘 $R_{out}$ 得輸出電壓、除以增益 $A_v=G_mR_{out}$。$G_m\approx g_{m1,2}$，$R_{out}\approx r_{O1,2}\parallel r_{O3,4}$。逐顆計算（講義手寫）：
 \begin{itemize}[leftmargin=2em]
-  \item $M_1$、$M_2$：$g_{m1,2}^2(4kT\gamma/g_{m1}+4kT\gamma/g_{m2})$。
-  \item $M_3$：雜訊電流 $4kT\gamma g_{m3}$ 主要流過二極體阻抗 $1/g_{m3}$，在 $M_4$ 閘極產生 $4kT\gamma/g_{m3}$，再乘 $g_{m4}^2$ 出現在輸出；$M_4$ 自己的雜訊直接流入短路。
+  \item $M_1$、$M_2$：各自的閘極雜訊 $4kT\gamma/g_{m1,2}$ 乘 $g_{m1,2}^2$：$\overline{I^2_{n1,out}}+\overline{I^2_{n2,out}}=2\cdot4kT\gamma g_{m1,2}$。
+  \item $M_3$：雜訊電流 $I_{n3}$ 主要流過二極體阻抗 $1/g_{m3}$，在 $M_4$ 閘極產生 $I_{n3}/g_{m3}$，再乘 $g_{m4}$ 出現在輸出：$\overline{I^2_{n3,out}}=\frac{g_{m4}^2}{g_{m3}^2}4kT\gamma g_{m3}=4kT\gamma g_{m3,4}$（$g_{m3}=g_{m4}$）。
+  \item $M_4$：雜訊電流直接流入短路：$\overline{I^2_{n4,out}}=4kT\gamma g_{m4}$。
 \end{itemize}
 \begin{align}
 \Isq{out}=4kT\gamma(2g_{m1,2}+2g_{m3,4}),\qquad
-\Vsq{in}=\frac{\Isq{out}R_{out}^2}{G_m^2R_{out}^2}=8kT\gamma\left(\frac1{g_{m1,2}}+\frac{g_{m3,4}}{g_{m1,2}^2}\right)
+\Vsq{in}=\frac{\Isq{out}R_{out}^2}{g_{m1,2}^2R_{out}^2}=8kT\gamma\left(\frac1{g_{m1,2}}+\frac{g_{m3,4}}{g_{m1,2}^2}\right)
 \end{align}
-與全差動電路相同。差別在\textbf{尾電流雜訊}：OTA 輸出等於 $V_X$，$I_{SS}$ 雜訊平分後在 $X$ 產生 $\overline{I_n^2}/(4g_{m3}^2)$，直接出現在輸出（全差動電路則只是共模）。
+與全差動的電流源負載差動對（\exref{7.22}）相同。
+
+\subsection{OTA 中尾電流源的雜訊會出現在輸出 \lec{36} \detail}
+\rfig{62}{0.24}{尾電流雜訊的影響（p.262）}
+$V_{out}$ 跟隨 $V_X$（輸入相同、電路對稱時，$V_{out}=V_X$）。$I_{SS}$ 的雜訊平分，$I_n/2$ 流過二極體 $M_3$ 的阻抗 $1/g_{m3}$：
+\begin{align}
+\overline{V^2_{n,X}}=\left(\frac{I_n}{2}\right)^2\frac{1}{g_{m3}^2}=\Vsq{out}
+\end{align}
+在全差動電路中尾電流雜訊只是共模；但 5T OTA 是單端輸出，它會直接出現在輸出端。
 
 % =====================================================================
-\section{雜訊–功耗取捨、雜訊頻寬與輸入雜訊積分}\label{sec:bw}
-
-\subsection{線性縮放：雜訊功率減半需付出兩倍功耗}
+\section{雜訊–功耗取捨：雜訊功率減半需付出兩倍功耗}
 \rfig{63}{0.55}{(a) 以縮放降低雜訊；(b) 等效為兩電路並聯；(c) 佈局觀點（p.263）}
-把 $W/L$ 與 $I_D$ 加倍、$R_D$ 減半：增益與擺幅不變，$g_m$ 與閘極面積都加倍，\textbf{輸入參考熱雜訊與 $1/f$ 雜訊功率都正好減半}（$-3$\,dB），代價是功耗（與輸入電容）加倍。等同兩個原電路並聯：兩個不相關 Thevenin 雜訊源經分壓各剩 $1/2$，
-\begin{align}
-\Vsq{out}=\frac{\overline{V^2_{n1,out}}}{4}+\frac{\overline{V^2_{n2,out}}}{4}=\frac{\overline{V^2_{n1,out}}}{2}
-\end{align}
-輸入開路時可證 $\Isq{in}$ 加倍（兩份並聯電流源相加）。這個取捨的前提是頻寬由應用決定、保持不變，且 $\Isq{in}$ 可忽略。
+\lec{37}：把 $W$ 與 $I_D$ 加倍、$R_D$ 減半：增益與擺幅不變，$g_m$ 與閘極面積都加倍，\textbf{輸入參考熱雜訊與 $1/f$ 雜訊功率都正好減半}（$-3$\,dB），代價是功耗與輸入電容加倍。也可把它看成兩個原電路並聯。
 
-\subsection{雜訊頻寬 $B_n$}
+\textbf{為何輸出雜訊減半} \lec{38} \detail：
+\rfig{64}{0.45}{兩個相同電路並聯時的輸出雜訊（p.264）}
+每個電路的輸出以 Thevenin 等效表示（$V_{n1}$、$V_{n2}$ 不相關，輸出阻抗都是 $Z_{out}$），並聯後經分壓：
+\begin{align}
+V_{n,out}=V_{n1}\frac{Z_{out}}{Z_{out}+Z_{out}}+V_{n2}\frac{Z_{out}}{Z_{out}+Z_{out}}=\frac12V_{n1}+\frac12V_{n2}
+\ \Rightarrow\ \Vsq{out}=\frac{\overline{V^2_{n1,out}}}{4}+\frac{\overline{V^2_{n2,out}}}{4}=\frac{\overline{V^2_{n1,out}}}{2}
+\end{align}
+增益不變，故輸入參考雜訊也減半。輸入開路時可證 $\Isq{in}$ 加倍（兩份並聯電流源相加），所以這個取捨的前提是頻寬由應用決定、保持不變，且 $\Isq{in}$ 可忽略。
+
+% =====================================================================
+\section{雜訊頻寬 $B_n$ \lec{39}}
 \rfig{65}{0.58}{(a) 多極點輸出雜訊頻譜；(b) 雜訊頻寬的概念（p.264）}
-定義 $B_n$ 使 $V_0^2\cdot B_n=\int_0^\infty\Vsq{out}\,df$，其中 $V_0^2$ 為低頻雜訊。可公平比較低頻雜訊相同、高頻轉移函數不同的電路。\textbf{單極點系統}：
+定義 $B_n$ 使「低頻雜訊 $\times$ $B_n$」等於總輸出雜訊：
+\begin{align}
+\overline{V^2_{n,out,tot}}=\int_0^\infty\Vsq{out}\,df=V_0^2\cdot B_n\ \Rightarrow\ B_n=\frac{1}{V_0^2}\int_0^\infty\Vsq{out}\,df
+\end{align}
+即用一個高度 $V_0^2$ 的矩形取代實際頻譜，使兩者面積相同（圖 b 中 $A_1=A_2$）。可公平比較低頻雜訊相同、但高頻轉移函數不同的電路。\textbf{單極點系統} \detail：
 \begin{align}
 B_n=\int_0^\infty\frac{df}{1+(f/f_p)^2}=f_p\Big[\tan^{-1}(f/f_p)\Big]_0^\infty=\boxed{\frac{\pi}{2}f_p}
 \end{align}
-（$kT/C$ 其實就是 $4kTR\cdot\frac{\pi}{2}\cdot\frac{1}{2\pi RC}$。）
+（$kT/C$ 其實就是 $4kTR\cdot\frac{\pi}{2}\cdot\frac{1}{2\pi RC}$。）講義寫成 $B_n=\frac{\pi}{2}\omega_{p1}$，要注意 $B_n$ 若以 Hz 計，應代入 $f_p=\omega_{p}/2\pi$。
 
-\subsection{不能在輸入端積分}
+% =====================================================================
+\section{輸入雜訊不能直接積分 \lec{40}}
 \rfig{66}{0.6}{輸入參考頻譜為白雜訊，積分發散（p.265）}
-CS 級（只看 $M_1$ 熱雜訊）的輸入參考頻譜就是 $4kT\gamma/g_m$，對頻率積分為無限大；而輸出頻譜被 $C_L$ 低通，可積分得 $\gamma g_mR_D\,kT/C_L$。正確做法：\textbf{在輸出積分，再除以低頻（中頻）增益平方}：
+CS 級（$\lambda=0$、忽略 $R_D$ 雜訊）的輸入參考頻譜就是 $4kT\gamma/g_m$，對頻率積分為無限大；而輸出頻譜被 $C_L$ 低通，可積分得 $\gamma g_mR_D\,kT/C_L$。實際可觀察的雜訊只在輸出端，輸入參考雜訊是虛構量。正確做法：\textbf{在輸出積分，再除以低頻（中頻）增益平方}：
 \begin{align}
 \Vsq{in,tot}=\gamma g_mR_D\frac{kT}{C_L}\cdot\frac{1}{g_m^2R_D^2}=\frac{\gamma}{g_mR_D}\cdot\frac{kT}{C_L}
 \end{align}
 
-\subsection{附錄 A：避開 $V_{n,in}$、$I_{n,in}$ 相關性的方法}
-若電路的輸出雜訊幾乎不隨源阻抗 $Z_S$（短路到開路）改變（例如 $C_{GD}$ 可忽略的 CS：$\overline{V^2_{n1,out}}=\overline{V^2_{n2,out}}=4kT\gamma g_mR_D^2+4kTR_D$），則 $\Isq{in}=\Vsq{in}/|Z_{in}|^2$，$I_{n,in}=V_{n,in}/Z_{in}$ 百分之百相關，代入後節點 $X$ 恆有 $V_{n,X}=V_{n,in}$。因此可\textbf{拿掉 $I_{n,in}$，只要用 $Z_{in}$ 負載前級}即可。若此條件不成立，就把前後級視為同一個電路一起求 $V_{n,in}$、$I_{n,in}$（圖 7.69）。
+\begin{cbox}[boxgray]{補充：附錄 A 避開 $V_{n,in}$、$I_{n,in}$ 相關性的方法（講義未提，課本 p.265--267）}
+若電路的輸出雜訊幾乎不隨源阻抗 $Z_S$（短路到開路）改變（例如 $C_{GD}$ 可忽略的 CS），則 $I_{n,in}=V_{n,in}/Z_{in}$，兩者百分之百相關，代入後節點 $X$ 恆有 $V_{n,X}=V_{n,in}$。因此可\textbf{拿掉 $I_{n,in}$，只要用 $Z_{in}$ 去負載前級}。若此條件不成立，就把前後級視為同一個電路一起求 $V_{n,in}$、$I_{n,in}$。
+\end{cbox}
 
 % =====================================================================
-\section{總比較表：各拓撲的輸入參考熱雜訊}
+\section*{總比較表：各拓撲的輸入參考熱雜訊}
 以下皆為低頻、每 Hz 的熱雜訊；$1/f$ 雜訊把每顆電晶體的 $4kT\gamma/g_m$ 換成 $K/(C_{ox}WLf)$，並乘上相同的增益比例即可。
 
-\begin{tabularx}{\linewidth}{>{\raggedright}p{2.3cm}>{\raggedright}p{5.0cm}>{\raggedright}p{2.6cm}X}
+\begin{tabularx}{\linewidth}{>{\raggedright}p{2.2cm}>{\raggedright}p{4.6cm}>{\raggedright}p{2.7cm}X}
 \toprule
 電路 & $\Vsq{in}$ & $\Isq{in}$ & 重點與直觀\tabularnewline\midrule
 CS，電阻負載 & $4kT\left(\frac{\gamma}{g_m}+\frac{1}{g_m^2R_D}\right)$ & $(C_{in}\omega)^2\frac{4kT}{g_m^2}\,\times$ $(\gamma g_m+\frac1{R_D})$；低頻 $\approx0$ & 提高 $g_m$、$R_D$ 降雜訊；代價為功耗、headroom\tabularnewline
@@ -531,8 +647,7 @@ Cascode & 低頻同 CS（$M_2$ 可忽略） & $\approx0$ & 高頻 $C_X$ 使 $M_2
 \bottomrule
 \end{tabularx}
 
-% =====================================================================
-\section{題型與期中考題解法}\label{sec:problems}
+\section*{題型與期中考題解法}\label{sec:problems}
 
 本節的題號對應課本習題，也就是〈Midterm Problems〉中的第 7 章題目（7.1--7.7）。題目若無特別說明，使用課本 Table 2.1 參數：$\mu_nC_{ox}=134.4\,\mu$A/V$^2$（$\mu_n=350\,\text{cm}^2/\text{V·s}$、$C_{ox}=3.84\,\text{fF}/\mu\text{m}^2$）、$V_{DD}=3$\,V、全部飽和。以下數值取 $kT=4.14\times10^{-21}$\,J、$\gamma=2/3$（長通道；若老師要求 $\gamma=1$ 則照比例修改）。
 
@@ -540,7 +655,7 @@ Cascode & 低頻同 CS（$M_2$ 可忽略） & $\approx0$ & 高頻 $C_X$ 使 $M_2
 習題 7.6--7.9 寫「Assume that $\lambda=\gamma=0$」，這裡的 $\gamma$ 是 \textbf{body effect 係數}（即 $g_{mb}=0$），不是通道熱雜訊係數。電晶體的熱雜訊 $4kT\gamma g_m$ \textbf{仍然存在}，不可以把它也設成零，否則電晶體就沒有雜訊了。
 \end{trapbox}
 
-\subsection{題型一：求 input-referred thermal noise voltage}
+\subsection*{題型一：求 input-referred thermal noise voltage}
 \textbf{辨識特徵}：「Calculate the input-referred thermal noise voltage」，MOS 閘極輸入。\\
 \textbf{步驟}：(1) 每顆電晶體用 lemma 寫成閘極串聯源 $4kT\gamma/g_m$，電阻寫成 $4kTR$ 或 $4kT/R$；(2) 求每個源到輸出的增益（或對輸出短路電流的轉導）；(3) 除以主輸入到輸出的增益平方，功率相加。
 
@@ -550,7 +665,7 @@ g_m&=\sqrt{2\mu_nC_{ox}\tfrac WLI_D}=\sqrt{2(134.4\,\mu)(100)(1\,\text{m})}=5.18
 \Vsq{in}&=4kT\left(\frac{\gamma}{g_m}+\frac{1}{g_m^2R_D}\right)=1.656\times10^{-20}\,(128.6+18.6)=2.44\times10^{-18}\ \text{V}^2/\text{Hz}\\
 V_{n,in,tot}&=\sqrt{2.44\times10^{-18}\times10^8}\approx\boxed{15.6\,\mu\text{V}_{\text{rms}}}\quad(\gamma=1\ \text{時約}\ 18.7\,\mu\text{V}_{\text{rms}})
 \end{align}
-（題目直接問「輸入參考雜訊在 100\,MHz 頻寬內」，故把白頻譜乘以頻寬；這與第 \ref{sec:bw} 節「在輸出積分」不矛盾，因為此處已明確給定頻寬。）
+（題目直接問「輸入參考雜訊在 100\,MHz 頻寬內」，故把白頻譜乘以頻寬；這與7.9 節「在輸出積分」不矛盾，因為此處已明確給定頻寬。）
 
 \rfig{71}{0.55}{習題 7.6 的六個電路（p.268）}
 \textbf{習題 7.6}（$\lambda=0$、$g_{mb}=0$）：
@@ -564,7 +679,7 @@ V_{n,in,tot}&=\sqrt{2.44\times10^{-18}\times10^8}\approx\boxed{15.6\,\mu\text{V}
   \item \textbf{(c)(e)(f)}：含回授電阻 $R_F$ 的電路，建議用「輸出短路雜訊電流 $\div G_m^2$」法（同\exref{7.13}）：先短路輸出求每個源的短路電流與 $G_m$，避免處理 $R_F$ 兩端的負載效應。
 \end{itemize}
 
-\subsection{題型二：設計／取捨（給定雜訊比例求尺寸或擺幅）}
+\subsection*{題型二：設計／取捨（給定雜訊比例求尺寸或擺幅）}
 \textbf{習題 7.2}（圖 7.42，$(W/L)_1=50/0.5$、$I_{D1}=I_{D2}=0.1$\,mA、$V_{DD}=3$\,V；$M_2$ 對輸入參考雜訊\textbf{電壓}（非平方）的貢獻為 $M_1$ 的 $1/5$，求最大輸出擺幅）：
 \begin{align}
 \sqrt{\frac{4kT\gamma g_{m2}/g_{m1}^2}{4kT\gamma/g_{m1}}}=\sqrt{\frac{g_{m2}}{g_{m1}}}=\frac15\ \Rightarrow\ g_{m2}=\frac{g_{m1}}{25}
@@ -572,28 +687,21 @@ V_{n,in,tot}&=\sqrt{2.44\times10^{-18}\times10^8}\approx\boxed{15.6\,\mu\text{V}
 $g_{m1}=\sqrt{2(134.4\,\mu)(100)(0.1\,\text{m})}=1.64$\,mS，$V_{ov1}=2I_D/g_{m1}=0.122$\,V；$g_{m2}=65.6\,\mu$S，$|V_{ov2}|=2I_D/g_{m2}=3.05$\,V。\\
 擺幅 $=V_{DD}-V_{ov1}-|V_{ov2}|<0$：\textbf{以題目數據，此規格不可行}（要求 $M_2$ 的 overdrive 超過 $V_{DD}$）。若把條件理解為「雜訊功率比 $1/5$」，則 $g_{m2}=g_{m1}/5$、$|V_{ov2}|=0.61$\,V，最大擺幅 $\approx3-0.122-0.61=2.27$\,V。作答時建議兩種都寫並說明，展現你理解「電流源管 $g_m$ 小 $\leftrightarrow$ overdrive 大 $\leftrightarrow$ 擺幅小」的取捨。
 
-\subsection{題型三：flicker noise}
+\subsection*{題型三：flicker noise}
 \textbf{習題 7.5}（圖 7.70，互補 CS：$V_{in}$ 同時接 $M_1$、$M_2$ 閘極）：
 \rfig{70}{0.17}{習題 7.5（p.268）}
 兩管的 $1/f$ 閘極源各經自己的 $g_m(r_{O1}\parallel r_{O2})$ 到輸出，主增益 $(g_{m1}+g_{m2})(r_{O1}\parallel r_{O2})$：
 \begin{align}
 \Vsq{in,1/f}=\frac{1}{C_{ox}f}\cdot\frac{g_{m1}^2\frac{K_N}{(WL)_1}+g_{m2}^2\frac{K_P}{(WL)_2}}{(g_{m1}+g_{m2})^2}
 \end{align}
-\textbf{其他 flicker 題}：corner frequency 用 $f_C=\frac{K}{C_{ox}WL}\frac{g_m}{4kT\gamma}$；頻帶積分得 $\ln(f_H/f_L)$；電流鏡要注意 $N$ 倍放大（第 6 節）。
+\textbf{其他 flicker 題}：corner frequency 用 $f_C=\frac{K}{C_{ox}WL}\frac{g_m}{4kT\gamma}$；頻帶積分得 $\ln(f_H/f_L)$；電流鏡要注意 $N$ 倍放大（7.5 節）。
 
-\subsection{題型四：證明題}
-\textbf{習題 7.4}（證明 (7.73)）：見第 5.1 節 lemma 的證明，關鍵是寫出 $V_S=Z_S(I_d+I_n)$、$I_d=-V_S(g_m+g_{mb}+1/r_O)$ 兩式後消去 $V_S$。
+\subsection*{題型四：證明題}
+\textbf{習題 7.4}（證明 (7.73)）：見 7.3 節 Lemma 的證明，關鍵是寫出 $V_S=Z_S(I_d+I_n)$、$I_d=-V_S(g_m+g_{mb}+1/r_O)$ 兩式後消去 $V_S$。
 
-\begin{cbox}[boxgray]{補充：習題 7.3 分佈閘極電阻等效為 $R_G/3$ 的證明}
-把閘極切成 $n$ 段，每段電阻 $R_G/n$、雜訊電壓 $V_k$（彼此不相關，$\overline{V_k^2}=4kTR_G/n$），每段配一個單元電晶體 $g_{mu}=g_m/n$。忽略通道雜訊、閘極電流為零，則第 $j$ 個單元的閘極電壓是它與接點之間所有段雜訊之和 $\sum_{k\le j}V_k$。
-\begin{enumerate}[leftmargin=2.2em]
-  \item \textbf{總汲極雜訊電流}：$I_d=g_{mu}\sum_{j=1}^n\sum_{k=1}^jV_k=g_{mu}\sum_{k=1}^n(n-k+1)V_k$，同一個 $V_k$ 影響 $n-k+1$ 個單元（這些是相關的，要先相加電壓）。
-  \item \textbf{取功率}（不同 $k$ 不相關）：$\overline{I_d^2}=g_{mu}^2\sum_{m=1}^nm^2\cdot\frac{4kTR_G}{n}\approx\frac{g_m^2}{n^2}\cdot\frac{n^3}{3}\cdot\frac{4kTR_G}{n}=g_m^2\cdot4kT\frac{R_G}{3}$
-  \item \textbf{結論}：等效於閘極串一個 $\boxed{R_G/3}$ 的集總電阻。
-\end{enumerate}
-\end{cbox}
+\textbf{習題 7.3}（分佈閘極電阻等效為 $R_G/3$）：完整證明見 7.2 節「閘極分佈電阻」，關鍵是同一段電阻的雜訊會影響它之後所有單元（先加電壓），再用 $\sum m^2\approx n^3/3$。
 
-\subsection{題型五：總積分雜訊與 SNR}
+\subsection*{題型五：總積分雜訊與 SNR}
 \textbf{辨識特徵}：給 $C_L$ 或頻寬，問 total／rms noise 或 SNR。\\
 \textbf{步驟}：寫出輸出頻譜（通常是白頻譜乘單極點）$\to$ 用 $\int_0^\infty\frac{4kTR\,df}{1+(2\pi RCf)^2}=\frac{kT}{C}$ 或 $B_n=\frac{\pi}{2}f_p$ 積分 $\to$ 需要輸入參考時再除以中頻增益平方。代表例：\exref{7.15}、\exref{7.19}，習題 7.15、7.32。
 
